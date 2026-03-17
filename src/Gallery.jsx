@@ -28,6 +28,19 @@ const PROTOTYPES = [
   //   dataEndpoints: ["get_player_season_stats", "player_percentiles"],
   //   keyInsight: "TBD",
   // },
+    {
+    id: 'rank-scout-prototype-v2',
+    title: 'Scout Rankings Radar',
+    description: '',
+    status: 'exploring',
+    date: '2026-03-17',
+    tags: [],
+    dataEndpoints: [],
+    keyInsight: '',
+    href: './prototypes/rank-scout-prototype-v2.html'
+  },
+  // END_PROTOTYPES
+];
 ]
 
 const STATUS = {
