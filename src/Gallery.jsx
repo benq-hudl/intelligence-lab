@@ -41,7 +41,6 @@ const PROTOTYPES = [
   },
   // END_PROTOTYPES
 ];
-]
 
 const STATUS = {
   exploring: { label: "Exploring", color: "#818cf8", bg: "#4f46e522" },
