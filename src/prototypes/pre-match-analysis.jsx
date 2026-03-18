@@ -1,18 +1,17 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { ChevronDown, ChevronRight, Play, AlertTriangle, Shield, Target, TrendingDown, Video, Users, Activity, Crosshair, Eye, CornerDownRight } from "lucide-react";
 
-// ─── Colour Tokens ────────────────────────────────────────────────
+// ─── Colour Tokens — light product theme (matching rank prototype) ─
 const C = {
-  bg: "#0f1120", surface: "#161830", card: "#1c1f3a", cardHover: "#222550",
-  border: "#2a2d52", borderLight: "#363a66",
-  text: "#e8e8f0", textMuted: "#8b8fa8", textDim: "#5c6080",
-  accent: "#6366f1", accentLight: "#818cf8", accentDim: "#4f46e5",
-  red: "#ef4444", redDim: "#7f1d1d", redLight: "#fca5a5",
-  amber: "#f59e0b", amberDim: "#78350f", amberLight: "#fcd34d",
-  green: "#10b981", greenDim: "#064e3b", greenLight: "#6ee7b7",
-  cyan: "#06b6d4", purple: "#a855f7", purpleDim: "#581c87",
+  bg: "#F9FAFB", surface: "#F3F4F6", card: "#FFFFFF", cardHover: "#F0F4FF",
+  border: "#E5E7EB", borderLight: "#D1D5DB",
+  text: "#111827", textMuted: "#6B7280", textDim: "#9CA3AF",
+  accent: "#1A6AFF", accentLight: "#4D8AFF", accentDim: "#1557DB",
+  red: "#E03A3A", redDim: "#FDEAEA", redLight: "#FCA5A5",
+  amber: "#D97706", amberDim: "#FEF3C7", amberLight: "#FCD34D",
+  green: "#1A8C52", greenDim: "#E4F4EC", greenLight: "#6EE7B7",
+  cyan: "#0369A1", purple: "#7C3AED", purpleDim: "#EDE9FE",
 };
 
 // ─── Mock Data — from real StatsBomb API pulls ────────────────────
@@ -346,7 +345,6 @@ const FirstContactChart = ({ data }) => {
 // MAIN APP
 // ═══════════════════════════════════════════════════════════════════
 export default function PreMatchAnalysis() {
-  const navigate = useNavigate();
   const [step, setStep] = useState("select");
   const [competition, setCompetition] = useState(null);
   const [team, setTeam] = useState(null);
@@ -364,20 +362,18 @@ export default function PreMatchAnalysis() {
   // ─── SELECTION SCREEN ─────────────────────────────────────────
   if (step === "select") {
     return (
-      <div style={{ minHeight: "100vh", background: C.bg, color: C.text, fontFamily: "'Inter', system-ui, sans-serif", padding: "40px 20px" }}>
-        <div style={{ maxWidth: 720, margin: "0 auto" }}>
-          <div style={{ marginBottom: 24 }}>
-            <button onClick={() => navigate("/")}
-              style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, color: C.textMuted, padding: "6px 14px", cursor: "pointer", fontSize: 12 }}>
-              ← Intelligence Lab
-            </button>
+      <div style={{ minHeight: "100vh", background: C.bg, color: C.text, fontFamily: "'Inter', system-ui, sans-serif" }}>
+        {/* Topbar */}
+        <div style={{ height: 52, background: "#FFFFFF", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", padding: "0 20px", gap: 16 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: C.text, letterSpacing: "-0.02em" }}>
+            Hudl <span style={{ color: C.accent }}>|</span> StatsBomb
           </div>
+          <div style={{ width: 1, height: 20, background: C.border }} />
+          <span style={{ fontSize: 13, color: C.textMuted, fontWeight: 500 }}>Pre-Match Intelligence</span>
+        </div>
+        <div style={{ maxWidth: 720, margin: "0 auto", padding: "40px 20px" }}>
           <div style={{ textAlign: "center", marginBottom: 48 }}>
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 10, marginBottom: 12 }}>
-              <Shield size={20} color={C.accent} />
-              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", color: C.accent }}>Pre-Match Intelligence</span>
-            </div>
-            <h1 style={{ fontSize: 36, fontWeight: 700, color: "#fff", marginBottom: 8 }}>Opposition Analysis</h1>
+            <h1 style={{ fontSize: 36, fontWeight: 700, color: C.text, marginBottom: 8 }}>Opposition Analysis</h1>
             <p style={{ fontSize: 14, color: C.textMuted }}>Pressing vulnerabilities, set piece threats, and video-linked key moments</p>
           </div>
 
@@ -463,28 +459,44 @@ export default function PreMatchAnalysis() {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, color: C.text, fontFamily: "'Inter', system-ui, sans-serif", padding: "32px 20px" }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", background: C.bg, color: C.text, fontFamily: "'Inter', system-ui, sans-serif" }}>
 
-        {/* Top Bar */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-          <button onClick={() => setStep("select")}
-            style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, color: C.textMuted, padding: "8px 16px", cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
-            ← Back
-          </button>
-          <Badge color={C.accentLight}><Shield size={12} /> StatsBomb Data Only</Badge>
+      {/* ── Topbar (matching rank prototype) ── */}
+      <div style={{ height: 52, background: "#FFFFFF", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", padding: "0 20px", gap: 16, position: "sticky", top: 0, zIndex: 100 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: C.text, letterSpacing: "-0.02em" }}>
+          Hudl <span style={{ color: C.accent }}>|</span> StatsBomb
         </div>
+        <div style={{ width: 1, height: 20, background: C.border }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 30, height: 30, borderRadius: "50%", background: `linear-gradient(135deg, ${C.accent} 0%, #9B59B6 100%)`, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 12, fontWeight: 700 }}>
+            {team?.name?.[0] ?? "?"}
+          </div>
+          <div style={{ lineHeight: 1.3 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{team?.name ?? "Select a team"}</div>
+            <div style={{ fontSize: 11, color: C.textMuted }}>Pre-Match Intelligence</div>
+          </div>
+        </div>
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
+          <button onClick={() => setStep("select")}
+            style={{ background: "transparent", border: `1.5px solid ${C.border}`, borderRadius: 8, color: C.textMuted, padding: "5px 14px", cursor: "pointer", fontSize: 12, fontWeight: 500 }}>
+            ← New Analysis
+          </button>
+          <Badge color={C.accentLight}><Shield size={12} /> StatsBomb Data</Badge>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 20px" }}>
 
         {/* Header */}
         <div style={{ marginBottom: 28, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 20 }}>
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", color: C.red, marginBottom: 8 }}>Pre-Match Analysis</div>
-            <h1 style={{ fontSize: 32, fontWeight: 700, color: "#fff", marginBottom: 6 }}>{team?.name} — Opposition Report</h1>
+            <h1 style={{ fontSize: 32, fontWeight: 700, color: C.text, marginBottom: 6 }}>{team?.name} — Opposition Report</h1>
             <p style={{ color: C.textMuted, fontSize: 14 }}>vs {upcoming.opponent} · {upcoming.date} · {upcoming.venue}</p>
           </div>
           <div style={{ background: C.card, borderRadius: 12, padding: "14px 20px", border: `1px solid ${C.border}`, textAlign: "right" }}>
             <div style={{ fontSize: 11, color: C.textMuted }}>Formation</div>
-            <div style={{ fontSize: 26, fontWeight: 700, color: "#fff" }}>{formation}</div>
+            <div style={{ fontSize: 26, fontWeight: 700, color: C.text }}>{formation}</div>
           </div>
         </div>
 
@@ -508,7 +520,7 @@ export default function PreMatchAnalysis() {
 
           {/* Formation + Threat Ratings */}
           <div style={{ marginBottom: 48 }}>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}>
               <Users size={18} color={C.accent} /> Back Line Pressing Vulnerability
             </h2>
 
@@ -608,7 +620,7 @@ export default function PreMatchAnalysis() {
           {/* Video Moments */}
           <div style={{ marginBottom: 48 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", display: "flex", alignItems: "center", gap: 8 }}>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, display: "flex", alignItems: "center", gap: 8 }}>
                 <Video size={18} color={C.accent} /> Key Moments — Video Review
               </h2>
               <div style={{ display: "flex", gap: 6 }}>
@@ -656,7 +668,7 @@ export default function PreMatchAnalysis() {
 
           {/* ── Title Row ── */}
           <div style={{ marginBottom: 32 }}>
-            <h2 style={{ fontSize: 24, fontWeight: 700, color: "#fff", marginBottom: 6 }}>{team?.name} corner dashboard</h2>
+            <h2 style={{ fontSize: 24, fontWeight: 700, color: C.text, marginBottom: 6 }}>{team?.name} corner dashboard</h2>
             <p style={{ fontSize: 13, color: C.textMuted }}>Data from {team?.name}'s UCL 2025/26 matches. {corners.summary.teamCorners} corners taken, {corners.summary.oppCorners} faced.</p>
           </div>
 
@@ -666,7 +678,7 @@ export default function PreMatchAnalysis() {
             {/* FROM RIGHT */}
             {[{ data: corners.fromRight, label: "From Right", cornerFrom: "Right" }, { data: corners.fromLeft, label: "From Left", cornerFrom: "Left" }].map(({ data: sd, label: sideLabel, cornerFrom }) => (
               <div key={sideLabel} style={{ background: C.card, borderRadius: 16, padding: 24, border: `1px solid ${C.border}` }}>
-                <h3 style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 8, textAlign: "center" }}>{sideLabel}</h3>
+                <h3 style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 8, textAlign: "center" }}>{sideLabel}</h3>
 
                 {/* Takers */}
                 <div style={{ textAlign: "center", marginBottom: 12 }}>
@@ -707,7 +719,7 @@ export default function PreMatchAnalysis() {
 
               <div style={{ background: C.surface, borderRadius: 10, padding: 16, border: `1px solid ${C.border}` }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: C.textMuted, marginBottom: 4 }}>Key Taker</div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 4 }}>Gabriel Sara</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 4 }}>Gabriel Sara</div>
                 <div style={{ fontSize: 12, color: C.textMuted }}>Took all 7 corners · Left-footed · Favours outswinging from the right</div>
               </div>
 
@@ -732,7 +744,7 @@ export default function PreMatchAnalysis() {
 
           {/* Attacking Corners — Individual Breakdown */}
           <div style={{ marginBottom: 40 }}>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
               <Video size={18} color={C.accent} /> Attacking Corners — Sequence Breakdown
             </h2>
 
@@ -786,7 +798,7 @@ export default function PreMatchAnalysis() {
 
           {/* Defensive Weaknesses (from opposition perspective) */}
           <div style={{ marginBottom: 40 }}>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
               <AlertTriangle size={18} color={C.red} /> {upcoming.opponent} Defending Weaknesses — Corners
             </h2>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -794,7 +806,7 @@ export default function PreMatchAnalysis() {
                 <div key={i} style={{ background: C.card, borderRadius: 12, padding: 20, border: `1px solid ${ratingColor(w.severity)}33` }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                     <SeverityDot severity={w.severity} />
-                    <span style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>{w.area}</span>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{w.area}</span>
                   </div>
                   <p style={{ fontSize: 13, lineHeight: 1.6, color: C.textMuted }}>{w.detail}</p>
                 </div>
@@ -804,7 +816,7 @@ export default function PreMatchAnalysis() {
 
           {/* Opposition Corners — Liverpool's ineffectiveness */}
           <div style={{ marginBottom: 40 }}>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
               <Shield size={18} color={C.green} /> {upcoming.opponent} Attacking Corners — Threat Level
             </h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -901,7 +913,7 @@ function CollapsibleSection({ open, onToggle, icon, title, subtitle, gradientFro
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           {icon}
           <div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: "#fff" }}>{title}</div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: C.text }}>{title}</div>
             <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>{subtitle}</div>
           </div>
         </div>
@@ -923,7 +935,7 @@ function TargetCard({ label, color, name, reason, icon }) {
         {icon}
         <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color }}>{label}</span>
       </div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: "#fff", marginBottom: 10 }}>{name}</div>
+      <div style={{ fontSize: 22, fontWeight: 700, color: C.text, marginBottom: 10 }}>{name}</div>
       <p style={{ fontSize: 14, lineHeight: 1.7, color: C.textMuted }}>{reason}</p>
     </div>
   );

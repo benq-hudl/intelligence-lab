@@ -1,0 +1,4590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scout · Rankings · Radar — Prototype v1</title>
+<style>
+/* ─── Reset & Variables ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --blue:        #1A6AFF;
+  --blue-light:  #E8F0FF;
+  --blue-mid:    #BBCFFF;
+  --red:         #E03A3A;
+  --red-light:   #FDEAEA;
+  --green:       #1A8C52;
+  --green-light: #E4F4EC;
+  --amber:       #D97706;
+  --amber-light: #FEF3C7;
+
+  --ink:         #111827;
+  --ink-60:      #6B7280;
+  --ink-40:      #9CA3AF;
+  --ink-20:      #D1D5DB;
+
+  --canvas:      #F9FAFB;
+  --canvas-2:    #F3F4F6;
+  --canvas-3:    #E5E7EB;
+  --white:       #FFFFFF;
+
+  --sidebar-w:   260px;
+  --topbar-h:    52px;
+  --subnav-h:    44px;
+
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-pill: 999px;
+
+  --shadow-sm:   0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md:   0 2px 8px rgba(0,0,0,0.12);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--canvas);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Page switcher (prototype nav) ────────────────────────────────────── */
+.page-switcher {
+  position: fixed;
+  top: 12px;
+  right: 16px;
+  z-index: 999;
+  display: flex;
+  gap: 4px;
+  background: var(--white);
+  border: 1.5px solid var(--ink-20);
+  border-radius: var(--radius-pill);
+  padding: 3px;
+  box-shadow: var(--shadow-md);
+}
+.page-btn {
+  padding: 5px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--ink-60);
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.page-btn.active {
+  background: var(--ink);
+  color: var(--white);
+}
+.page-label {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-40);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  z-index: 999;
+  pointer-events: none;
+}
+
+/* ─── Page visibility ───────────────────────────────────────────────────── */
+.page { display: none; height: 100vh; flex-direction: column; }
+.page.active { display: flex; }
+
+/* ─── Topbar ────────────────────────────────────────────────────────────── */
+.topbar {
+  height: var(--topbar-h);
+  min-height: var(--topbar-h);
+  background: var(--white);
+  border-bottom: 1px solid var(--canvas-3);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 16px;
+  z-index: 100;
+}
+.topbar-logo {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+.topbar-logo span { color: var(--blue); }
+.topbar-sep { width: 1px; height: 20px; background: var(--canvas-3); }
+.topbar-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.topbar-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1A6AFF 0%, #9B59B6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+}
+.topbar-player-info { line-height: 1.3; }
+.topbar-player-name { font-size: 14px; font-weight: 600; }
+.topbar-player-sub { font-size: 11px; color: var(--ink-60); }
+
+/* ─── Subnav tabs ───────────────────────────────────────────────────────── */
+.subnav {
+  height: var(--subnav-h);
+  min-height: var(--subnav-h);
+  background: var(--white);
+  border-bottom: 1px solid var(--canvas-3);
+  display: flex;
+  align-items: flex-end;
+  padding: 0 20px;
+  gap: 0;
+}
+.subnav-tab {
+  padding: 0 16px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-60);
+  cursor: pointer;
+  border-bottom: 2.5px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.subnav-tab:hover { color: var(--ink); }
+.subnav-tab.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 600; }
+
+/* ─── Layout shell ──────────────────────────────────────────────────────── */
+.layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ─── Sidebar ───────────────────────────────────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--white);
+  border-right: 1px solid var(--canvas-3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sidebar-inner {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.sidebar-inner::-webkit-scrollbar { width: 4px; }
+.sidebar-inner::-webkit-scrollbar-track { background: transparent; }
+.sidebar-inner::-webkit-scrollbar-thumb { background: var(--ink-20); border-radius: 2px; }
+
+/* ─── Filter sections ───────────────────────────────────────────────────── */
+.filter-section { border-bottom: 1px solid var(--canvas-2); }
+.filter-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  cursor: pointer;
+  user-select: none;
+}
+.filter-section-head.static { cursor: default; }
+.filter-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-60); }
+.filter-section-caret { font-size: 12px; color: var(--ink-40); transition: transform 0.2s; }
+.filter-section-caret.collapsed { transform: rotate(180deg); }
+.filter-section-body { padding: 0 16px 14px; }
+.filter-section-body.collapsed { display: none; }
+
+/* Competition + Season chips */
+.cs-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 0 2px; }
+.cs-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 26px; padding: 0 4px 0 10px;
+  background: var(--white); border: 1.5px solid var(--blue);
+  border-radius: var(--radius-pill); font-size: 11.5px; font-weight: 500; color: var(--blue);
+  white-space: nowrap;
+}
+.cs-x { font-size: 10px; color: var(--blue-mid); cursor: pointer; padding: 2px 4px; }
+.cs-add { font-size: 12px; color: var(--blue); cursor: pointer; padding: 4px 2px; font-weight: 500; }
+
+/* Period toggle */
+.period-toggle {
+  display: inline-flex; background: var(--canvas-2);
+  border-radius: 6px; padding: 2px; gap: 2px; margin-bottom: 10px;
+}
+.period-tab {
+  padding: 5px 12px; border-radius: 5px; font-size: 12px; cursor: pointer;
+  color: var(--ink-60); transition: all 0.12s;
+}
+.period-tab.active {
+  background: var(--white); color: var(--ink);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: 500;
+}
+
+/* Match row */
+.match-select-row {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; color: var(--ink-60); margin-top: 6px;
+}
+.match-count { font-weight: 600; color: var(--ink); }
+
+/* Filter select */
+.filter-select {
+  width: 100%; padding: 7px 10px; font-size: 12.5px;
+  border: 1.5px solid var(--canvas-3); border-radius: 6px;
+  background: var(--white); color: var(--ink); cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%239CA3AF' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 8px center; background-size: 14px;
+  padding-right: 28px;
+}
+.filter-select:focus { outline: none; border-color: var(--blue); }
+
+/* Slider */
+.filter-slider-row { margin-top: 10px; }
+.filter-slider-label {
+  display: flex; justify-content: space-between;
+  font-size: 11px; color: var(--ink-60); margin-bottom: 5px;
+}
+.filter-slider-label strong { color: var(--ink); }
+input[type=range] {
+  width: 100%; height: 4px; accent-color: var(--blue); cursor: pointer;
+}
+
+/* ─── SCOUT: Role group pills ───────────────────────────────────────────── */
+.role-group-section { padding: 14px 16px 4px; }
+.role-group-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-60); margin-bottom: 10px; }
+
+.role-pills { display: flex; flex-direction: column; gap: 5px; }
+.role-pill {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 12px; border-radius: var(--radius-md);
+  border: 1.5px solid var(--canvas-3); background: var(--white);
+  cursor: pointer; transition: all 0.12s;
+}
+.role-pill:hover { border-color: var(--blue-mid); }
+.role-pill.active { border-color: var(--blue); background: var(--blue-light); }
+.role-pill-left { display: flex; align-items: center; gap: 8px; }
+.role-pill-icon {
+  width: 26px; height: 26px; border-radius: 6px;
+  background: var(--canvas-2); display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+}
+.role-pill.active .role-pill-icon { background: var(--blue); }
+.role-pill-name { font-size: 13px; font-weight: 500; }
+.role-pill.active .role-pill-name { color: var(--blue); font-weight: 600; }
+.role-pill-mins { font-size: 11px; color: var(--ink-60); }
+.role-pill.active .role-pill-mins { color: var(--blue); opacity: 0.7; }
+.role-pill-pct {
+  font-size: 11px; font-weight: 600; color: var(--ink-60);
+  background: var(--canvas-2); padding: 2px 7px; border-radius: var(--radius-pill);
+}
+.role-pill.active .role-pill-pct { background: rgba(26,106,255,0.15); color: var(--blue); }
+
+/* Refine panel */
+.refine-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; cursor: pointer; border-top: 1px solid var(--canvas-2);
+  margin-top: 8px;
+}
+.refine-toggle-label { font-size: 12px; font-weight: 500; color: var(--ink-60); }
+.refine-toggle-caret { font-size: 11px; color: var(--ink-40); transition: transform 0.2s; }
+.refine-toggle-caret.open { transform: rotate(180deg); }
+
+.refine-panel {
+  background: var(--canvas-2); margin: 0 12px 14px; border-radius: var(--radius-md);
+  padding: 12px; display: none;
+}
+.refine-panel.open { display: block; }
+
+.refine-note {
+  font-size: 11px; color: var(--ink-60); line-height: 1.5; margin-bottom: 10px;
+  padding: 8px 10px; background: var(--white); border-radius: var(--radius-sm);
+  border-left: 3px solid var(--blue-mid);
+}
+.refine-note strong { color: var(--ink); }
+
+.refine-pos-list { display: flex; flex-direction: column; gap: 5px; }
+.refine-pos-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 8px; background: var(--white); border-radius: var(--radius-sm);
+  font-size: 12px;
+}
+.refine-pos-left { display: flex; align-items: center; gap: 8px; }
+.refine-pos-left input[type=checkbox] { accent-color: var(--blue); width: 14px; height: 14px; cursor: pointer; }
+.refine-pos-label { font-weight: 500; }
+.refine-pos-abbr { font-size: 10.5px; color: var(--ink-40); }
+.refine-pos-mins { font-size: 11px; color: var(--ink-60); }
+
+.refine-footer {
+  margin-top: 10px; font-size: 11px; color: var(--ink-60);
+  padding-top: 8px; border-top: 1px solid var(--canvas-3); line-height: 1.5;
+}
+.refine-footer strong { color: var(--ink); }
+
+/* ─── Scout: Results area ───────────────────────────────────────────────── */
+.main {
+  flex: 1; overflow-y: auto; padding: 20px;
+  overscroll-behavior: contain;
+}
+.main::-webkit-scrollbar { width: 6px; }
+.main::-webkit-scrollbar-track { background: transparent; }
+.main::-webkit-scrollbar-thumb { background: var(--ink-20); border-radius: 3px; }
+
+/* ─── Scout main area ──────────────────────────────────────────────────── */
+.main { min-height: 0; }
+
+/* ─── Scout results table ───────────────────────────────────────────────── */
+.results-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+}
+.results-count { font-size: 13px; color: var(--ink-60); }
+.results-count strong { color: var(--ink); }
+.results-sort {
+  display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-60);
+}
+.sort-select {
+  padding: 5px 10px; font-size: 12px; border: 1.5px solid var(--canvas-3);
+  border-radius: 6px; background: var(--white); cursor: pointer; color: var(--ink);
+  appearance: none; padding-right: 24px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%239CA3AF' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 6px center; background-size: 12px;
+}
+
+.player-table { width: 100%; border-collapse: collapse; }
+.player-table thead th {
+  text-align: left; font-size: 11px; font-weight: 600; color: var(--ink-60);
+  text-transform: uppercase; letter-spacing: 0.04em;
+  padding: 8px 12px; border-bottom: 1px solid var(--canvas-3);
+  white-space: nowrap;
+}
+.player-table thead th.num { text-align: right; }
+.player-table tbody tr {
+  border-bottom: 1px solid var(--canvas-2); cursor: pointer; transition: background 0.1s;
+}
+.player-table tbody tr:hover { background: var(--canvas); }
+.player-table tbody tr.highlight { background: var(--blue-light); }
+.player-table tbody td { padding: 10px 12px; font-size: 13px; }
+.player-table tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.player-cell { display: flex; align-items: center; gap: 10px; }
+.player-cell-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--canvas-3); display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: var(--ink-60); flex-shrink: 0;
+}
+.player-cell-avatar.semenyo { background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%); color: white; }
+.player-cell-name { font-weight: 600; font-size: 13px; }
+.player-cell-team { font-size: 11px; color: var(--ink-60); }
+
+.role-tag {
+  display: inline-flex; align-items: center; padding: 2px 7px;
+  border-radius: var(--radius-pill); font-size: 10.5px; font-weight: 500;
+  background: var(--canvas-2); color: var(--ink-60);
+}
+.stat-bar-cell { display: flex; align-items: center; gap: 8px; }
+.stat-val { font-size: 13px; font-variant-numeric: tabular-nums; min-width: 32px; text-align: right; }
+.stat-bar-track {
+  flex: 1; height: 6px; background: var(--canvas-3); border-radius: 3px; overflow: hidden; max-width: 80px;
+}
+.stat-bar-fill { height: 100%; border-radius: 3px; background: var(--blue); }
+.highlight .stat-bar-fill { background: var(--red); }
+
+/* ─── RANKINGS page ─────────────────────────────────────────────────────── */
+.rank-topbar {
+  background: var(--white);
+  border-bottom: 1px solid var(--canvas-3);
+  padding: 10px 20px;
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.rank-filter-group { display: flex; flex-direction: column; gap: 4px; }
+.rank-filter-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-60); }
+.rank-filter-select {
+  padding: 6px 28px 6px 10px; font-size: 12.5px;
+  border: 1.5px solid var(--canvas-3); border-radius: 6px;
+  background: var(--white); color: var(--ink); cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%239CA3AF' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 8px center; background-size: 14px;
+  min-width: 140px;
+}
+.rank-filter-select:focus { outline: none; border-color: var(--blue); }
+.rank-filter-sep { width: 1px; height: 40px; background: var(--canvas-3); margin: 0 4px; }
+
+.rank-context-pill {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 8px;
+  background: var(--canvas-2); border-radius: var(--radius-pill);
+  padding: 6px 14px; font-size: 12px; color: var(--ink-60);
+  white-space: nowrap;
+}
+.rank-context-pill strong { color: var(--ink); font-weight: 600; }
+.rank-context-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--blue); flex-shrink: 0;
+}
+
+/* Rankings grid */
+.rank-main { flex: 1; overflow-y: auto; padding: 20px; background: var(--canvas); min-height: 0; }
+.rank-main::-webkit-scrollbar { width: 6px; }
+.rank-main::-webkit-scrollbar-track { background: transparent; }
+.rank-main::-webkit-scrollbar-thumb { background: var(--ink-20); border-radius: 3px; }
+
+.rank-player-banner {
+  background: var(--white); border-radius: var(--radius-lg);
+  padding: 16px 20px; margin-bottom: 18px;
+  display: flex; align-items: center; gap: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.rank-player-avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 800; color: white; flex-shrink: 0;
+}
+.rank-player-name { font-size: 16px; font-weight: 700; }
+.rank-player-sub { font-size: 12px; color: var(--ink-60); margin-top: 2px; }
+.rank-player-badges { display: flex; gap: 8px; margin-left: auto; }
+.rank-badge {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 8px 14px; border-radius: var(--radius-md);
+  background: var(--canvas); min-width: 80px; text-align: center;
+}
+.rank-badge.top { background: var(--green-light); }
+.rank-badge-num { font-size: 20px; font-weight: 800; color: var(--ink); line-height: 1; }
+.rank-badge.top .rank-badge-num { color: var(--green); }
+.rank-badge-label { font-size: 10px; color: var(--ink-60); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+.rank-badge.top .rank-badge-label { color: var(--green); }
+
+.rank-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+
+/* Strip chart card */
+.strip-card {
+  background: var(--white); border-radius: var(--radius-lg);
+  padding: 16px 18px; box-shadow: var(--shadow-sm);
+}
+.strip-card-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+.strip-card-metric { font-size: 13px; font-weight: 600; }
+.strip-card-rank {
+  font-size: 11px; font-weight: 700; padding: 3px 8px;
+  border-radius: var(--radius-pill);
+}
+.strip-card-rank.top5 { background: var(--green-light); color: var(--green); }
+.strip-card-rank.top15 { background: var(--blue-light); color: var(--blue); }
+.strip-card-rank.mid { background: var(--canvas-2); color: var(--ink-60); }
+
+.strip-chart { position: relative; margin: 28px 0 26px; }
+.strip-track {
+  height: 30px; border-radius: 4px;
+  background: linear-gradient(to right, var(--canvas-3) 0%, var(--canvas-2) 100%);
+  position: relative; overflow: visible;
+}
+
+/* Individual player dots */
+.player-dot {
+  position: absolute; top: 50%; width: 7px; height: 7px;
+  border-radius: 50%; transform: translate(-50%, -50%);
+  background: var(--ink-20); transition: all 0.15s;
+}
+.player-dot.named {
+  width: 9px; height: 9px;
+  background: var(--ink-40); border: 2px solid var(--white);
+  box-shadow: 0 0 0 1px var(--ink-40);
+}
+.player-dot.focus {
+  width: 12px; height: 12px;
+  background: var(--red); border: 2px solid var(--white);
+  box-shadow: 0 0 0 2px var(--red);
+  z-index: 10;
+}
+
+/* Dot labels */
+.dot-label {
+  position: absolute; top: -20px;
+  transform: translateX(-50%);
+  font-size: 10px; font-weight: 700; color: var(--red);
+  white-space: nowrap;
+  pointer-events: none;
+  background: rgba(255,255,255,0.85);
+  padding: 0 2px;
+  border-radius: 2px;
+}
+.dot-label.below {
+  top: auto; bottom: -18px; color: var(--ink-60);
+  font-weight: 500; background: transparent;
+}
+
+.strip-axis { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-40); margin-top: 4px; position: relative; }
+
+.strip-card-vals {
+  display: flex; align-items: baseline; gap: 6px; margin-top: 10px;
+}
+.strip-focus-val { font-size: 22px; font-weight: 800; color: var(--red); line-height: 1; }
+.strip-focus-unit { font-size: 12px; color: var(--ink-60); }
+.strip-focus-sep { color: var(--ink-20); }
+.strip-median-val { font-size: 13px; color: var(--ink-60); }
+.strip-median-label { font-size: 11px; color: var(--ink-40); }
+
+/* Quartile bands */
+.quartile-band {
+  position: absolute; top: 0; height: 100%;
+  border-radius: 0;
+}
+.quartile-band.q1 { background: rgba(26,106,255,0.05); left: 0%; width: 25%; border-radius: 4px 0 0 4px; }
+.quartile-band.q4 { background: rgba(26,106,255,0.05); right: 0%; width: 25%; border-radius: 0 4px 4px 0; }
+
+/* ─── Role context switcher ─────────────────────────────────────────────── */
+.role-ctx-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.role-ctx-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-40); white-space: nowrap; }
+.role-ctx-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.role-ctx-pill {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 10px; border-radius: var(--radius-pill);
+  border: 1.5px solid var(--canvas-3); background: var(--canvas);
+  cursor: pointer; transition: all 0.15s;
+}
+.role-ctx-pill:hover { border-color: var(--blue-mid); background: var(--blue-light); }
+.role-ctx-pill.active { border-color: var(--blue); background: var(--blue-light); }
+.role-ctx-name { font-size: 12px; font-weight: 600; color: var(--ink); }
+.role-ctx-pill.active .role-ctx-name { color: var(--blue); }
+.role-ctx-mins { font-size: 11px; color: var(--ink-40); }
+.role-ctx-pill.active .role-ctx-mins { color: var(--blue); opacity: 0.7; }
+.role-ctx-note { font-size: 11px; color: var(--amber); }
+
+/* Secondary context panel */
+.secondary-ctx-panel {
+  background: var(--white); border-radius: var(--radius-lg);
+  border: 2px dashed var(--canvas-3);
+  padding: 20px; margin-bottom: 18px;
+}
+.secondary-ctx-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.secondary-ctx-title { font-size: 15px; font-weight: 700; }
+.secondary-ctx-back {
+  font-size: 12px; color: var(--blue); cursor: pointer;
+  background: none; border: none; font-weight: 500; padding: 4px 8px;
+  border-radius: 6px; transition: background 0.1s;
+}
+.secondary-ctx-back:hover { background: var(--blue-light); }
+.secondary-ctx-body { font-size: 13px; color: var(--ink-60); line-height: 1.7; }
+
+.ctx-compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.ctx-compare-card {
+  padding: 14px 16px; border-radius: var(--radius-md); border: 1.5px solid var(--canvas-3);
+}
+.ctx-compare-card.primary { border-color: var(--blue); background: var(--blue-light); }
+.ctx-compare-card.secondary { border-color: var(--canvas-3); background: var(--canvas); }
+.ctx-compare-role { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-60); margin-bottom: 8px; }
+.ctx-compare-card.primary .ctx-compare-role { color: var(--blue); }
+.ctx-compare-stat { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 0; border-bottom: 1px solid rgba(0,0,0,0.04); }
+.ctx-compare-stat:last-child { border-bottom: none; }
+.ctx-compare-metric { font-size: 12px; color: var(--ink-60); }
+.ctx-compare-val { font-size: 13px; font-weight: 600; }
+.ctx-rank-good { color: var(--green); }
+.ctx-rank-ok { color: var(--blue); }
+.ctx-rank-avg { color: var(--ink-60); }
+
+.ctx-insight-box {
+  margin-top: 14px; padding: 12px 14px; border-radius: var(--radius-md);
+  background: var(--amber-light); border: 1px solid #FDE68A;
+  font-size: 12px; color: var(--amber); line-height: 1.5;
+}
+.ctx-insight-box strong { color: #92400E; }
+
+/* ─── Radar note banner (inside Rankings page) ──────────────────────────── */
+.radar-note-banner {
+  background: var(--amber-light);
+  border: 1px solid #FDE68A;
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--amber);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+.radar-note-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+
+/* ─── Empty state ───────────────────────────────────────────────────────── */
+.empty-tab {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  color: var(--ink-40); font-size: 14px; font-style: italic;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────────── */
+.sidebar-inner { -webkit-overflow-scrolling: touch; }
+
+</style>
+</head>
+<body>
+
+<!-- Prototype page switcher -->
+<div class="page-label">PROTOTYPE v1</div>
+<div class="page-switcher">
+  <div class="page-btn" onclick="switchPage('scout')">🔍 Player Scout</div>
+  <div class="page-btn" onclick="switchPage('rankings')">📊 Rankings</div>
+  <div class="page-btn active" onclick="switchPage('radar')">🎯 Radar</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PAGE 1 — PLAYER SCOUT
+════════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-scout">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-logo">H<span>u</span>dl Scout</div>
+    <div class="topbar-sep"></div>
+    <span style="font-size:12px;color:var(--ink-60);">Player Scout</span>
+  </div>
+
+  <!-- Subnav (scouts have different tabs in full product) -->
+  <div class="subnav">
+    <div class="subnav-tab active">Players</div>
+    <div class="subnav-tab">Teams</div>
+    <div class="subnav-tab">Matches</div>
+    <div class="subnav-tab">Lists</div>
+  </div>
+
+  <div class="layout">
+
+    <!-- ── Scout Sidebar ─────────────────────────────────────────── -->
+    <div class="sidebar">
+      <div class="sidebar-inner">
+
+        <!-- Competition & Season -->
+        <div class="filter-section">
+          <div class="filter-section-head static">
+            <span class="filter-section-title">Competition &amp; Season</span>
+          </div>
+          <div class="filter-section-body" style="padding-top:0">
+            <div class="cs-chips">
+              <div class="cs-chip">PL 25/26 <span class="cs-x">✕</span></div>
+              <div class="cs-chip">PL 24/25 <span class="cs-x">✕</span></div>
+              <span class="cs-add">+ Add</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Matches -->
+        <div class="filter-section">
+          <div class="filter-section-head" onclick="toggleSection('matchesBody', this)">
+            <span class="filter-section-title">Matches</span>
+            <span class="filter-section-caret">∧</span>
+          </div>
+          <div class="filter-section-body" id="matchesBody">
+            <div class="period-toggle">
+              <div class="period-tab active">Season</div>
+              <div class="period-tab">Date Range</div>
+            </div>
+            <div style="display:flex;gap:6px;margin-bottom:8px">
+              <div style="flex:1">
+                <label style="font-size:11px;color:var(--ink-60);display:block;margin-bottom:4px">Game Type</label>
+                <select class="filter-select"><option>All Games</option><option>League only</option></select>
+              </div>
+            </div>
+            <div class="match-select-row">
+              <span>Min. minutes played</span>
+              <span class="match-count">≥ 450</span>
+            </div>
+            <input type="range" min="0" max="3000" value="450" style="margin-top:6px;width:100%">
+          </div>
+        </div>
+
+        <!-- Role Group — PRIMARY filter ─────────────────────────── -->
+        <div class="role-group-section">
+          <div class="role-group-title">Position Group</div>
+
+          <div class="role-pills" id="scoutRolePills">
+
+            <div class="role-pill" onclick="selectRole('attacker', this)" data-role="attacker">
+              <div class="role-pill-left">
+                <div class="role-pill-icon">⚡</div>
+                <div>
+                  <div class="role-pill-name">Attacker</div>
+                  <div class="role-pill-mins">CF · SS · AF</div>
+                </div>
+              </div>
+              <span class="role-pill-pct">412</span>
+            </div>
+
+            <div class="role-pill active" onclick="selectRole('winger', this)" data-role="winger">
+              <div class="role-pill-left">
+                <div class="role-pill-icon">🏃</div>
+                <div>
+                  <div class="role-pill-name">Winger</div>
+                  <div class="role-pill-mins">LW · RW · LM · RM</div>
+                </div>
+              </div>
+              <span class="role-pill-pct">487</span>
+            </div>
+
+            <div class="role-pill" onclick="selectRole('amc', this)" data-role="amc">
+              <div class="role-pill-left">
+                <div class="role-pill-icon">🎯</div>
+                <div>
+                  <div class="role-pill-name">Attacking Mid</div>
+                  <div class="role-pill-mins">RAM · LAM · CAM</div>
+                </div>
+              </div>
+              <span class="role-pill-pct">298</span>
+            </div>
+
+            <div class="role-pill" onclick="selectRole('cm', this)" data-role="cm">
+              <div class="role-pill-left">
+                <div class="role-pill-icon">⚙️</div>
+                <div>
+                  <div class="role-pill-name">Central Mid</div>
+                  <div class="role-pill-mins">CM · DM · Box-to-Box</div>
+                </div>
+              </div>
+              <span class="role-pill-pct">621</span>
+            </div>
+
+            <div class="role-pill" onclick="selectRole('fb', this)" data-role="fb">
+              <div class="role-pill-left">
+                <div class="role-pill-icon">🛡️</div>
+                <div>
+                  <div class="role-pill-name">Full Back</div>
+                  <div class="role-pill-mins">LB · RB · LWB · RWB</div>
+                </div>
+              </div>
+              <span class="role-pill-pct">390</span>
+            </div>
+
+            <div class="role-pill" onclick="selectRole('cb', this)" data-role="cb">
+              <div class="role-pill-left">
+                <div class="role-pill-icon">🏰</div>
+                <div>
+                  <div class="role-pill-name">Centre Back</div>
+                  <div class="role-pill-mins">LCB · RCB · CB</div>
+                </div>
+              </div>
+              <span class="role-pill-pct">524</span>
+            </div>
+
+            <div class="role-pill" onclick="selectRole('gk', this)" data-role="gk">
+              <div class="role-pill-left">
+                <div class="role-pill-icon">🧤</div>
+                <div>
+                  <div class="role-pill-name">Goalkeeper</div>
+                  <div class="role-pill-mins">GK</div>
+                </div>
+              </div>
+              <span class="role-pill-pct">189</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Refine positions ▾ (within current role group) -->
+        <div class="refine-toggle" id="refineToggle" onclick="toggleRefine()">
+          <span class="refine-toggle-label">🔧 Refine positions <span id="refineActiveCount" style="color:var(--blue);font-weight:600"></span></span>
+          <span class="refine-toggle-caret" id="refineCaret">∨</span>
+        </div>
+
+        <div class="refine-panel" id="refinePanel">
+          <div class="refine-note">
+            <strong>All positions in this group share the same benchmark &amp; template.</strong>
+            Use this to narrow the pool — e.g. if you only want left-footed wide players — but rankings and percentiles remain identical to the full Winger group.
+          </div>
+          <div class="refine-pos-list" id="refinePosListScout">
+            <!-- injected by JS -->
+          </div>
+          <div class="refine-footer">
+            <strong>Radar note:</strong> position refinement is a Scout-only feature. On Radar, the role group (Winger) is the evaluation unit — narrowing to LW vs RW wouldn't change any percentile score, so there's nothing to refine there.
+          </div>
+        </div>
+
+        <!-- Age / Physical filters -->
+        <div class="filter-section" style="margin-top:8px">
+          <div class="filter-section-head" onclick="toggleSection('playerAttrsBody', this)">
+            <span class="filter-section-title">Player Attributes</span>
+            <span class="filter-section-caret">∧</span>
+          </div>
+          <div class="filter-section-body" id="playerAttrsBody">
+            <div class="filter-slider-row">
+              <div class="filter-slider-label"><span>Age</span><strong id="ageVal">18–32</strong></div>
+              <input type="range" min="16" max="40" value="32" oninput="document.getElementById('ageVal').textContent='18–'+this.value">
+            </div>
+            <div class="filter-slider-row" style="margin-top:12px">
+              <div class="filter-slider-label"><span>Height</span><strong>Any</strong></div>
+              <input type="range" min="155" max="205" value="205">
+            </div>
+            <div style="margin-top:12px">
+              <label style="font-size:12px;color:var(--ink-60);display:block;margin-bottom:6px">Foot</label>
+              <select class="filter-select"><option>Any</option><option>Right</option><option>Left</option></select>
+            </div>
+            <div style="margin-top:10px">
+              <label style="font-size:12px;color:var(--ink-60);display:block;margin-bottom:6px">Nationality</label>
+              <select class="filter-select"><option>Any</option><option>English</option><option>EU only</option></select>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /sidebar-inner -->
+    </div><!-- /sidebar -->
+
+    <!-- ── Scout Main ─────────────────────────────────────────────── -->
+    <div class="main">
+      <div class="results-header">
+        <div class="results-count">
+          Showing <strong id="scoutResultCount">487</strong> wingers · PL 24/25 + 25/26 · ≥450 mins
+        </div>
+        <div class="results-sort">
+          Sort by
+          <select class="sort-select">
+            <option>Similarity</option>
+            <option>Progressive Carries</option>
+            <option>xG / 90</option>
+            <option>OBV / 90</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Scout results table -->
+      <table class="player-table">
+        <thead>
+          <tr>
+            <th style="width:220px">Player</th>
+            <th>Position</th>
+            <th class="num">Age</th>
+            <th class="num">Mins</th>
+            <th class="num">Prog Carries</th>
+            <th class="num">xG /90</th>
+            <th class="num">OBV /90</th>
+            <th class="num">Match %</th>
+          </tr>
+        </thead>
+        <tbody id="scoutTableBody">
+          <!-- injected -->
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div><!-- /page-scout -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PAGE 2 — RANKINGS
+════════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-rankings">
+
+  <!-- Topbar with player context -->
+  <div class="topbar">
+    <div class="topbar-logo">H<span>u</span>dl Scout</div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-player">
+      <div class="topbar-avatar">AS</div>
+      <div class="topbar-player-info">
+        <div class="topbar-player-name">Antoine Semenyo</div>
+        <div class="topbar-player-sub">AFC Bournemouth · Winger</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subnav tabs (within player profile) -->
+  <div class="subnav">
+    <div class="subnav-tab">Radar</div>
+    <div class="subnav-tab active">Rankings</div>
+    <div class="subnav-tab">Pitch Viz</div>
+    <div class="subnav-tab">Match Stats</div>
+    <div class="subnav-tab">Videos</div>
+  </div>
+
+  <!-- Rankings-specific filter bar (separate from Radar filters) -->
+  <div class="rank-topbar">
+    <div class="rank-filter-group">
+      <div class="rank-filter-label">Competition</div>
+      <select class="rank-filter-select">
+        <option selected>Premier League</option>
+        <option>Championship</option>
+        <option>La Liga</option>
+        <option>Bundesliga</option>
+        <option>Serie A</option>
+        <option>Ligue 1</option>
+      </select>
+    </div>
+
+    <div class="rank-filter-sep"></div>
+
+    <div class="rank-filter-group">
+      <div class="rank-filter-label">Season</div>
+      <select class="rank-filter-select">
+        <option selected>2025/26</option>
+        <option>2024/25</option>
+        <option>2023/24</option>
+      </select>
+    </div>
+
+    <div class="rank-filter-sep"></div>
+
+    <div class="rank-filter-group">
+      <div class="rank-filter-label">Position Group</div>
+      <select class="rank-filter-select">
+        <option selected>Winger</option>
+        <option>Attacker</option>
+        <option>Attacking Mid</option>
+        <option>Central Mid</option>
+        <option>Full Back</option>
+      </select>
+    </div>
+
+    <div class="rank-filter-sep"></div>
+
+    <div class="rank-filter-group">
+      <div class="rank-filter-label">Min. Minutes</div>
+      <select class="rank-filter-select">
+        <option>≥ 180 mins</option>
+        <option selected>≥ 300 mins</option>
+        <option>≥ 450 mins</option>
+        <option>≥ 900 mins</option>
+      </select>
+    </div>
+
+    <!-- Context pill -->
+    <div class="rank-context-pill">
+      <div class="rank-context-dot"></div>
+      <span><strong>PL · 25/26</strong> · Wingers · ≥300 mins · <strong>47 players</strong></span>
+    </div>
+  </div>
+
+  <!-- Rankings main content -->
+  <div class="rank-main">
+
+    <!-- Why Rankings has its own filter bar -->
+    <div class="radar-note-banner">
+      <div class="radar-note-icon">ℹ️</div>
+      <div>
+        <strong>Rankings uses a dedicated, single comp/season filter.</strong>
+        To rank fairly, every player in the pool must be evaluated against the same denominator. Mixing multi-season or multi-competition stats would make rank positions incomparable — the pool's composition would vary by player. Use Radar for multi-season profiles; use Rankings to answer "where does this player rank <em>right now</em>?"
+      </div>
+    </div>
+
+    <!-- Player summary banner -->
+    <div class="rank-player-banner" id="playerBanner">
+      <div class="rank-player-avatar" id="bannerAvatar">AS</div>
+      <div style="flex:1">
+        <div class="rank-player-name" id="bannerName">Antoine Semenyo</div>
+        <div class="rank-player-sub" id="bannerSub">AFC Bournemouth · PL 25/26 · 1,549 mins</div>
+
+        <!-- Role context switcher -->
+        <div class="role-ctx-row" style="margin-top:10px">
+          <div class="role-ctx-label">Evaluate as:</div>
+          <div class="role-ctx-pills" id="roleCtxPills">
+            <div class="role-ctx-pill active" onclick="switchRoleCtx('winger', this)">
+              <span class="role-ctx-name">Winger</span>
+              <span class="role-ctx-mins">1,349 mins · 87%</span>
+            </div>
+            <div class="role-ctx-pill" onclick="switchRoleCtx('cm', this)">
+              <span class="role-ctx-name">Central Mid</span>
+              <span class="role-ctx-mins">147 mins · 8%</span>
+            </div>
+            <div class="role-ctx-pill" onclick="switchRoleCtx('forward', this)">
+              <span class="role-ctx-name">Forward</span>
+              <span class="role-ctx-mins">52 mins · 3%</span>
+            </div>
+          </div>
+          <div class="role-ctx-note" id="roleCtxNote"></div>
+        </div>
+      </div>
+
+      <div class="rank-player-badges" id="bannerBadges">
+        <div class="rank-badge top">
+          <div class="rank-badge-num">4<sup style="font-size:12px">th</sup></div>
+          <div class="rank-badge-label">Prog. Carries</div>
+        </div>
+        <div class="rank-badge top">
+          <div class="rank-badge-num">6<sup style="font-size:12px">th</sup></div>
+          <div class="rank-badge-label">Dribble %</div>
+        </div>
+        <div class="rank-badge">
+          <div class="rank-badge-num">9<sup style="font-size:12px">th</sup></div>
+          <div class="rank-badge-label">xG /90</div>
+        </div>
+        <div class="rank-badge">
+          <div class="rank-badge-num">11<sup style="font-size:12px">th</sup></div>
+          <div class="rank-badge-label">OBV /90</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Secondary role context panel (shown when a non-primary role is selected) -->
+    <div class="secondary-ctx-panel" id="secondaryCtxPanel" style="display:none">
+      <div class="secondary-ctx-header">
+        <div class="secondary-ctx-title" id="secondaryCtxTitle"></div>
+        <button class="secondary-ctx-back" onclick="switchRoleCtx('winger', document.querySelector('.role-ctx-pill'))">← Back to Winger view</button>
+      </div>
+      <div class="secondary-ctx-body" id="secondaryCtxBody"></div>
+    </div>
+
+    <!-- Strip charts grid -->
+    <div class="rank-grid" id="rankGrid">
+      <!-- injected by JS -->
+    </div>
+
+  </div>
+</div><!-- /page-rankings -->
+
+<!-- ════════════ RADAR PAGE (ported from radar-benchmark-prototype-v3) ════ -->
+<style>
+/* Radar v3 scoped styles */
+
+
+.r3wrap, .r3wrap *::before, .r3wrap *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+
+
+.r3wrap {
+  --r3-nav-bg: #232a31;
+  --r3-nav-active: #313b45;
+  --r3-nav-border: #1e2528;
+  --r3-nav-accent: #1993ff;
+  --r3-white: #ffffff;
+  --r3-canvas-2: #edf2f7;
+  --r3-canvas-1: #cbd5e0;
+  --r3-blue: #2b6cb0;
+  --r3-ink: #121212;
+  --r3-ink-80: rgba(18,18,18,0.8);
+  --r3-ink-40: rgba(18,18,18,0.4);
+  --r3-teal: #136064;
+  --r3-teal-light: #e6f4f4;
+  --r3-red-1: #c00000;
+  --r3-red-2: #9b0000;
+  --r3-green: #16a34a;
+}
+
+
+
+.r3wrap, .r3wrap {
+  width: 100%; height: 100%; margin: 0; padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--r3-canvas-2);
+  color: var(--r3-ink);
+  font-size: 13px;
+  overflow: hidden;
+  display: flex;
+}
+
+
+/* ═══════════════════════════════════
+   LEFT ICON NAV (56px)
+═══════════════════════════════════ */
+
+.r3wrap .icon-nav {
+  width: 56px;
+  height: 100%;
+  background: var(--r3-nav-bg);
+  border-right: 1px solid var(--r3-nav-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+
+
+.r3wrap .icon-nav-logo {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--r3-nav-border);
+  flex-shrink: 0;
+}
+
+
+
+.r3wrap .icon-nav-items {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  flex: 1;
+  gap: 2px;
+}
+
+
+
+.r3wrap .nav-item {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.12s, background 0.12s;
+}
+
+
+.r3wrap .nav-item:hover { opacity: 0.8; background: rgba(255,255,255,0.06); }
+
+
+.r3wrap .nav-item.active { opacity: 1; background: var(--r3-nav-active); }
+
+
+
+.r3wrap .icon-nav-bottom {
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+
+/* ═══════════════════════════════════
+   RIGHT COLUMN
+═══════════════════════════════════ */
+
+.r3wrap .right-col {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+
+/* ── TOPBAR (56px) ── */
+
+.r3wrap .topbar {
+  height: 56px;
+  background: var(--r3-white);
+  border-bottom: 1px solid var(--r3-canvas-2);
+  display: flex;
+  align-items: center;
+  padding: 0 16px 0 8px;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+
+
+.r3wrap .topbar-lhs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+
+
+.r3wrap .team-badge {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 9px; font-weight: 800;
+  flex-shrink: 0;
+}
+
+
+
+.r3wrap .player-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--r3-ink);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+
+.r3wrap .player-name-chevron { color: var(--r3-ink-40); font-size: 12px; margin-left: 2px; }
+
+
+
+.r3wrap .topbar-divider { width: 1px; height: 20px; background: var(--r3-canvas-1); flex-shrink: 0; }
+
+
+/* Scenario switcher (prototype feature) — lives in topbar */
+
+.r3wrap .scenario-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--r3-ink-40); white-space: nowrap; margin-left: 4px;
+}
+
+
+.r3wrap .scenario-tab {
+  padding: 5px 10px; font-size: 12px; cursor: pointer; color: var(--r3-ink-40);
+  border: 1px solid transparent; border-radius: 5px; white-space: nowrap; font-weight: 500;
+  transition: all 0.12s;
+}
+
+
+.r3wrap .scenario-tab.active {
+  color: var(--r3-ink); background: var(--r3-canvas-2); border-color: var(--r3-canvas-1); font-weight: 600;
+}
+
+
+.r3wrap .scenario-tab:hover:not(.active) { color: var(--r3-ink-80); }
+
+
+.r3wrap .multi-badge {
+  font-size: 9px; background: #fef3c7; color: #92400e;
+  padding: 1px 5px; border-radius: 8px; font-weight: 700; margin-left: 4px;
+}
+
+
+.r3wrap .proto-pill {
+  background: rgba(255,200,0,0.15); color: #92400e; border: 1px solid rgba(255,200,0,0.4);
+  border-radius: 4px; padding: 3px 7px; font-size: 10px; font-weight: 700; letter-spacing: 0.2px;
+}
+
+
+
+.r3wrap .topbar-rhs { display: flex; align-items: center; gap: 8px; }
+
+
+.r3wrap .icon-btn {
+  width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center;
+  justify-content: center; cursor: pointer; background: none; border: none; color: var(--r3-ink-40);
+  font-size: 15px; transition: background 0.1s, color 0.1s;
+}
+
+
+.r3wrap .icon-btn:hover { background: var(--r3-canvas-2); color: var(--r3-ink); }
+
+
+/* ── SUBNAV (page tabs) ── */
+
+.r3wrap .subnav {
+  height: 40px;
+  background: var(--r3-white);
+  border-bottom: 1px solid var(--r3-canvas-2);
+  display: flex;
+  align-items: flex-end;
+  padding: 0 16px;
+  gap: 0;
+  flex-shrink: 0;
+}
+
+
+.r3wrap .subnav-tab {
+  padding: 0 14px 0;
+  height: 40px;
+  display: flex; align-items: center;
+  font-size: 13px; font-weight: 500;
+  color: var(--r3-ink-40);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: color 0.1s, border-color 0.1s;
+}
+
+
+.r3wrap .subnav-tab.active { color: var(--r3-ink); border-bottom-color: var(--r3-ink); font-weight: 600; }
+
+
+.r3wrap .subnav-tab:hover:not(.active) { color: var(--r3-ink-80); }
+
+
+/* ── MAIN BODY ── */
+
+.r3wrap .main-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  background: var(--r3-canvas-2);
+  gap: 4px;
+}
+
+
+/* ═══════════════════════════════════
+   FILTERS PANEL (320px)
+═══════════════════════════════════ */
+
+.r3wrap .filters {
+  width: 304px;
+  flex-shrink: 0;
+  background: var(--r3-white);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  border-right: 1px solid var(--r3-canvas-2);
+}
+
+
+
+.r3wrap .filters-head {
+  height: 48px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--r3-canvas-2);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  background: var(--r3-white);
+  z-index: 2;
+}
+
+
+.r3wrap .filters-title { font-size: 14px; font-weight: 700; color: var(--r3-ink); }
+
+
+.r3wrap .filters-controls { display: flex; align-items: center; gap: 6px; }
+
+
+/* Sidebar sections */
+
+.r3wrap .sidebar-section { padding: 14px 16px; border-bottom: 1px solid var(--r3-canvas-2); }
+
+
+
+.r3wrap .section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+
+.r3wrap .section-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.6px; color: var(--r3-ink-40);
+  display: flex; align-items: center; gap: 5px;
+}
+
+
+.r3wrap .section-title-icon { font-size: 13px; }
+
+
+
+.r3wrap .field-label {
+  font-size: 11px; font-weight: 600; color: var(--r3-ink-40);
+  text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 5px; margin-top: 10px;
+}
+
+
+.r3wrap .field-label:first-of-type { margin-top: 0; }
+
+
+/* Tags / chips */
+
+.r3wrap .tag-row { display: flex; flex-wrap: wrap; gap: 5px; }
+
+
+.r3wrap .tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 22px; padding: 0 4px 0 8px;
+  border: 1.5px solid var(--r3-blue);
+  border-radius: 999px;
+  background: white;
+  font-size: 12px; color: var(--r3-ink-80); cursor: default;
+}
+
+
+.r3wrap .tag .x { font-size: 10px; color: var(--r3-ink-40); cursor: pointer; margin-left: 1px; }
+
+
+.r3wrap .tag .x:hover { color: var(--r3-ink); }
+
+
+.r3wrap .tag-add {
+  font-size: 12px; color: var(--r3-blue); cursor: pointer; padding: 3px 0;
+  font-weight: 500;
+}
+
+
+.r3wrap .tag-add:hover { text-decoration: underline; }
+
+
+/* Select dropdowns */
+
+.r3wrap .filter-select {
+  width: 100%; border: 1px solid var(--r3-canvas-1); border-radius: 5px;
+  padding: 6px 10px; font-size: 13px; color: var(--r3-ink-80);
+  background: var(--r3-white); cursor: pointer; margin-top: 2px;
+  font-family: inherit;
+}
+
+
+.r3wrap .filter-select:focus { outline: none; border-color: var(--r3-blue); }
+
+
+/* Evaluation context box */
+
+.r3wrap .eval-context-box {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  padding: 9px 11px;
+  margin-top: 10px;
+}
+
+
+.r3wrap .eval-context-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--r3-blue); margin-bottom: 4px;
+  display: flex; align-items: center; gap: 6px;
+}
+
+
+.r3wrap .eval-context-value { font-size: 13px; font-weight: 700; color: var(--r3-ink); }
+
+
+.r3wrap .eval-context-sub { font-size: 11px; color: rgba(43,108,176,0.7); margin-top: 2px; }
+
+
+.r3wrap .eval-info {
+  font-size: 10px; color: var(--r3-blue); cursor: pointer;
+  border: 1px solid #bfdbfe; border-radius: 10px; width: 16px; height: 16px;
+  display: inline-flex; align-items: center; justify-content: center; font-weight: 700;
+}
+
+
+/* Benchmark trigger */
+
+.r3wrap .benchmark-trigger {
+  border: 1.5px solid var(--r3-teal); border-radius: 6px; padding: 9px 12px;
+  cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+  background: white; transition: background 0.1s;
+}
+
+
+.r3wrap .benchmark-trigger:hover { background: var(--r3-teal-light); }
+
+
+.r3wrap .benchmark-trigger-name { font-size: 13px; font-weight: 600; color: var(--r3-teal); }
+
+
+.r3wrap .benchmark-trigger-detail { font-size: 11px; color: var(--r3-ink-40); margin-top: 2px; }
+
+
+.r3wrap .benchmark-trigger-chevron { font-size: 16px; color: var(--r3-teal); flex-shrink: 0; }
+
+
+.r3wrap .benchmark-hint { font-size: 11px; color: var(--r3-ink-40); text-align: center; margin-top: 5px; }
+
+
+/* ═══════════════════════════════════
+   PRODUCTION-STYLE FILTER SECTIONS
+═══════════════════════════════════ */
+
+.r3wrap .filter-section { border-bottom: 1px solid var(--r3-canvas-2); }
+
+
+
+.r3wrap .filter-section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 16px; cursor: pointer; user-select: none;
+}
+
+
+.r3wrap .filter-section-head.static { cursor: default; }
+
+
+.r3wrap .filter-section-title { font-size: 14px; font-weight: 700; color: var(--r3-ink); }
+
+
+.r3wrap .filter-section-caret {
+  font-size: 13px; color: var(--r3-ink-40);
+  display: inline-block; transition: transform 0.2s;
+  line-height: 1;
+}
+
+
+.r3wrap .filter-section-caret.collapsed { transform: rotate(180deg); }
+
+
+.r3wrap .filter-section-body { padding: 0 16px 14px; }
+
+
+.r3wrap .filter-section-body.collapsed { display: none; }
+
+
+/* ── Competition & Season chips ── */
+
+.r3wrap .cs-selector { padding: 0 16px 14px; display: flex; flex-wrap: wrap; gap: 6px; }
+
+
+.r3wrap .cs-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 28px; padding: 0 4px 0 10px;
+  background: var(--r3-white); border: 1.5px solid var(--r3-blue);
+  border-radius: 999px; font-size: 12px; color: var(--r3-ink-80);
+}
+
+
+.r3wrap .cs-chip .cs-x {
+  width: 18px; height: 18px; border-radius: 50%; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 10px; color: var(--r3-ink-40);
+}
+
+
+.r3wrap .cs-chip .cs-x:hover { background: var(--r3-canvas-2); color: var(--r3-ink); }
+
+
+.r3wrap .cs-add { font-size: 12px; color: var(--r3-blue); cursor: pointer; font-weight: 500; padding: 4px 0; line-height: 28px; }
+
+
+.r3wrap .cs-add:hover { text-decoration: underline; }
+
+
+/* ── Period toggle (Period / Date Range) ── */
+
+.r3wrap .period-toggle {
+  display: inline-flex; background: var(--r3-canvas-2); border-radius: 6px;
+  padding: 2px; gap: 2px; margin-bottom: 10px;
+}
+
+
+.r3wrap .period-tab {
+  padding: 4px 14px; border-radius: 4px; font-size: 12px; font-weight: 500;
+  color: var(--r3-ink-40); cursor: pointer; transition: all 0.12s;
+}
+
+
+.r3wrap .period-tab.active { background: var(--r3-white); color: var(--r3-ink); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+
+/* ── Match: All selected [Select] row ── */
+
+.r3wrap .match-select-row {
+  display: flex; align-items: center; justify-content: space-between; margin-top: 12px;
+}
+
+
+.r3wrap .match-all-text { font-size: 13px; color: var(--r3-ink-80); }
+
+
+.r3wrap .select-btn {
+  font-size: 12px; font-weight: 600; color: var(--r3-ink-80);
+  background: var(--r3-canvas-2); border: none; border-radius: 6px;
+  padding: 5px 12px; cursor: pointer; font-family: inherit;
+}
+
+
+.r3wrap .select-btn:hover { background: var(--r3-canvas-1); }
+
+
+/* Warning banners */
+
+.r3wrap .warn {
+  border-radius: 5px; padding: 8px 10px; font-size: 11.5px; line-height: 1.45;
+  margin-top: 10px; display: flex; gap: 7px; align-items: flex-start;
+}
+
+
+.r3wrap .warn-icon { flex-shrink: 0; font-size: 12px; margin-top: 1px; }
+
+
+.r3wrap .warn.yellow { background: #fffbeb; border: 1px solid #fcd34d; color: #78350f; }
+
+
+.r3wrap .warn.blue { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+
+
+.r3wrap .warn.orange { background: #fff7ed; border: 1px solid #fdba74; color: #7c2d12; }
+
+
+/* Context summary */
+
+.r3wrap #ctxSummary { font-size: 12px; color: var(--r3-ink-40); line-height: 1.8; }
+
+
+/* ═══════════════════════════════════
+   CONTENT AREA
+═══════════════════════════════════ */
+
+.r3wrap .content {
+  flex: 1;
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+  padding: 4px 4px 4px 0;
+  overflow: hidden;
+}
+
+
+/* White panels (radar + table) */
+
+.r3wrap .panel {
+  background: var(--r3-white);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+
+.r3wrap .radar-panel { flex: 1; min-width: 0; }
+
+
+.r3wrap .right-panel { width: 320px; flex-shrink: 0; }
+
+
+
+.r3wrap .panel-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--r3-canvas-2);
+  display: flex; align-items: flex-start; justify-content: space-between;
+  flex-shrink: 0;
+}
+
+
+.r3wrap .panel-title {
+  font-size: 13px; font-weight: 600;
+  display: flex; align-items: center; gap: 8px; color: var(--r3-ink);
+}
+
+
+.r3wrap .position-pill {
+  background: var(--r3-canvas-2); border: 1px solid var(--r3-canvas-1);
+  border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 500;
+  cursor: pointer; color: var(--r3-ink-80); white-space: nowrap;
+}
+
+
+.r3wrap .eval-inline { font-size: 11px; margin-top: 3px; color: var(--r3-ink-40); }
+
+
+.r3wrap .eval-inline strong { color: var(--r3-blue); }
+
+
+.r3wrap .benchmark-context { font-size: 11px; color: var(--r3-ink-40); margin-top: 2px; }
+
+
+.r3wrap .benchmark-context strong { color: var(--r3-teal); }
+
+
+/* ── Profile selector (in radar panel header) ── */
+
+.r3wrap .profile-selector {
+  display: inline-flex; align-items: center; gap: 6px;
+  cursor: pointer; padding: 4px 0; position: relative; user-select: none;
+}
+
+
+.r3wrap .profile-selector-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--r3-ink-40); margin-right: 2px;
+}
+
+
+.r3wrap .profile-selector-name {
+  font-size: 14px; font-weight: 700; color: var(--r3-teal);
+}
+
+
+.r3wrap .profile-selector-pct {
+  font-size: 13px; font-weight: 700; color: var(--r3-ink); margin-left: 1px;
+}
+
+
+.r3wrap .profile-selector-chevron {
+  font-size: 10px; color: var(--r3-ink-40); transition: transform 0.15s; margin-left: 2px;
+}
+
+
+.r3wrap .profile-selector.open .profile-selector-chevron { transform: rotate(180deg); }
+
+
+.r3wrap .profile-dropdown {
+  display: none; position: absolute;
+  top: calc(100% + 6px); left: -12px;
+  background: var(--r3-white); border: 1px solid var(--r3-canvas-1);
+  border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,0.14);
+  width: 292px; z-index: 100; overflow: hidden;
+}
+
+
+.r3wrap .profile-dropdown.open { display: block; }
+
+
+.r3wrap .profile-dropdown-head {
+  padding: 10px 14px 8px;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--r3-ink-40); border-bottom: 1px solid var(--r3-canvas-2);
+}
+
+
+.r3wrap .profile-dropdown-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 14px; cursor: pointer; transition: background 0.1s;
+}
+
+
+.r3wrap .profile-dropdown-item:hover { background: var(--r3-canvas-2); }
+
+
+.r3wrap .profile-dropdown-item.active { background: var(--r3-teal-light); }
+
+
+.r3wrap .profile-item-rank {
+  font-size: 11px; font-weight: 600; color: var(--r3-ink-40);
+  width: 14px; flex-shrink: 0; text-align: right;
+}
+
+
+.r3wrap .profile-item-name {
+  flex: 1; font-size: 13px; font-weight: 500; color: var(--r3-ink);
+}
+
+
+.r3wrap .profile-dropdown-item.active .profile-item-name { color: var(--r3-teal); font-weight: 600; }
+
+
+.r3wrap .profile-item-bar-wrap {
+  width: 44px; height: 4px; background: var(--r3-canvas-1); border-radius: 2px; flex-shrink: 0;
+}
+
+
+.r3wrap .profile-item-bar { height: 4px; border-radius: 2px; background: var(--r3-teal); }
+
+
+.r3wrap .profile-item-pct {
+  font-size: 12px; font-weight: 700; color: var(--r3-ink); width: 30px; text-align: right; flex-shrink: 0;
+}
+
+
+.r3wrap .profile-dropdown-item.active .profile-item-pct { color: var(--r3-teal); }
+
+
+.r3wrap .profile-dropdown-footer {
+  padding: 9px 14px; border-top: 1px solid var(--r3-canvas-2);
+  font-size: 12px; color: var(--r3-blue); cursor: pointer; font-weight: 500;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+
+.r3wrap .profile-dropdown-footer:hover { background: var(--r3-canvas-2); }
+
+
+.r3wrap .radar-area {
+  flex: 1; display: flex; justify-content: center; align-items: center;
+  padding: 8px; min-height: 340px;
+}
+
+
+/* Benchmark row (right panel, above percentile table) */
+
+.r3wrap .benchmark-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 14px; cursor: pointer;
+  background: var(--r3-canvas-2); border-bottom: 1px solid var(--r3-canvas-1);
+  flex-shrink: 0; transition: background 0.1s;
+}
+
+
+.r3wrap .benchmark-row:hover { background: #dde4ee; }
+
+
+.r3wrap .benchmark-row-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;
+  color: var(--r3-ink-40); margin-bottom: 2px;
+}
+
+
+.r3wrap .benchmark-row-name {
+  font-size: 12px; font-weight: 600; color: var(--r3-teal);
+}
+
+
+.r3wrap .benchmark-row-detail {
+  font-size: 11px; color: var(--r3-ink-40); margin-top: 1px;
+}
+
+
+.r3wrap .benchmark-row-chevron { font-size: 11px; color: var(--r3-ink-40); flex-shrink: 0; margin-left: 6px; }
+
+
+/* Panel tabs (right panel) */
+
+.r3wrap .panel-tabs {
+  display: flex; border-bottom: 1px solid var(--r3-canvas-2); flex-shrink: 0;
+}
+
+
+.r3wrap .panel-tab {
+  flex: 1; padding: 10px 8px; text-align: center; font-size: 12px; font-weight: 500;
+  cursor: pointer; color: var(--r3-ink-40); border-bottom: 2px solid transparent; transition: all 0.12s;
+}
+
+
+.r3wrap .panel-tab.active { color: var(--r3-ink); border-bottom-color: var(--r3-ink); font-weight: 600; }
+
+
+.r3wrap .panel-tab:hover:not(.active) { color: var(--r3-ink-80); }
+
+
+.r3wrap .tab-content { display: none; flex-direction: column; flex: 1; overflow-y: auto; }
+
+
+.r3wrap .tab-content.active { display: flex; }
+
+
+/* Percentile table */
+
+.r3wrap .table-subhead {
+  display: flex; padding: 6px 14px;
+  background: var(--r3-canvas-2); border-bottom: 1px solid var(--r3-canvas-1);
+  font-size: 10px; font-weight: 700; color: var(--r3-ink-40); text-transform: uppercase;
+  letter-spacing: 0.4px; flex-shrink: 0;
+}
+
+
+.r3wrap .table-subhead .col-metric { flex: 1; }
+
+
+.r3wrap .table-subhead .col-val { width: 56px; text-align: right; }
+
+
+.r3wrap .table-subhead .col-pct { width: 80px; text-align: right; }
+
+
+
+.r3wrap .table-row {
+  display: flex; align-items: center; padding: 8px 14px;
+  border-bottom: 1px solid var(--r3-canvas-2);
+}
+
+
+.r3wrap .table-row:last-child { border-bottom: none; }
+
+
+.r3wrap .table-row:nth-child(even) { background: #fafbfc; }
+
+
+.r3wrap .col-metric { flex: 1; font-size: 12px; color: var(--r3-ink-80); }
+
+
+.r3wrap .col-metric a { color: var(--r3-blue); text-decoration: none; }
+
+
+.r3wrap .col-metric a:hover { text-decoration: underline; }
+
+
+.r3wrap .col-val { width: 56px; text-align: right; font-size: 12px; color: var(--r3-ink-40); font-variant-numeric: tabular-nums; }
+
+
+.r3wrap .col-pct { width: 80px; display: flex; align-items: center; justify-content: flex-end; gap: 5px; }
+
+
+.r3wrap .pct-num { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+
+.r3wrap .pct-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+
+.r3wrap .dot-green { background: #16a34a; }
+
+
+.r3wrap .dot-blue { background: var(--r3-blue); }
+
+
+/* Context footer */
+
+.r3wrap .context-footer {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  border-top: 1px solid var(--r3-canvas-2); background: var(--r3-canvas-2);
+  margin-top: auto; flex-shrink: 0;
+}
+
+
+.r3wrap .ctx-item { padding: 10px 14px; }
+
+
+.r3wrap .ctx-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--r3-ink-40); margin-bottom: 3px; }
+
+
+.r3wrap .ctx-val { font-size: 12px; color: var(--r3-ink-80); font-weight: 500; }
+
+
+/* ── Profile match tab ── */
+
+.r3wrap .pm-header {
+  padding: 11px 14px; border-bottom: 1px solid var(--r3-canvas-2);
+  background: #f7fbff; flex-shrink: 0;
+}
+
+
+.r3wrap .pm-eval-row { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+
+
+.r3wrap .pm-eval-label { font-size: 11px; color: var(--r3-ink-40); }
+
+
+.r3wrap .pm-eval-value { font-size: 13px; font-weight: 700; color: var(--r3-ink); }
+
+
+.r3wrap .pm-eval-badge {
+  font-size: 10px; border-radius: 999px; padding: 2px 7px; font-weight: 600;
+  background: #dbeafe; color: var(--r3-blue);
+}
+
+
+.r3wrap .pm-eval-change { font-size: 11px; color: var(--r3-blue); cursor: pointer; margin-left: auto; font-weight: 500; }
+
+
+.r3wrap .pm-eval-change:hover { text-decoration: underline; }
+
+
+
+.r3wrap .pm-secondary {
+  background: #faf5ff; border: 1px solid #ddd6fe;
+  border-radius: 6px; padding: 9px 12px; margin: 10px 14px;
+  font-size: 12px; color: #5b21b6; line-height: 1.5;
+}
+
+
+.r3wrap .pm-secondary strong { font-weight: 700; }
+
+
+.r3wrap .pm-secondary a { color: #7c3aed; cursor: pointer; font-weight: 600; text-decoration: underline; }
+
+
+
+.r3wrap .pm-list { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex: 1; }
+
+
+.r3wrap .pm-card {
+  border: 1px solid var(--r3-canvas-1); border-radius: 6px; padding: 10px 12px;
+  cursor: pointer; transition: border-color 0.1s, background 0.1s;
+}
+
+
+.r3wrap .pm-card:hover { border-color: var(--r3-teal); background: var(--r3-teal-light); }
+
+
+.r3wrap .pm-card.top { border-color: var(--r3-teal); background: var(--r3-teal-light); }
+
+
+.r3wrap .pm-card-top-row {
+  display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 5px;
+}
+
+
+.r3wrap .pm-card-name { font-size: 12px; font-weight: 700; color: var(--r3-ink); }
+
+
+.r3wrap .pm-card-badge {
+  font-size: 10px; font-weight: 600; background: #d1fae5; color: #065f46;
+  border-radius: 999px; padding: 1px 7px; white-space: nowrap;
+}
+
+
+.r3wrap .pm-card-pct { font-size: 20px; font-weight: 800; color: var(--r3-ink); line-height: 1; }
+
+
+.r3wrap .pm-card.top .pm-card-pct { color: var(--r3-teal); }
+
+
+.r3wrap .pm-bar-track { background: var(--r3-canvas-1); border-radius: 2px; height: 4px; margin-bottom: 8px; }
+
+
+.r3wrap .pm-bar-fill { height: 4px; border-radius: 2px; background: var(--r3-canvas-1); transition: width 0.3s; }
+
+
+.r3wrap .pm-card.top .pm-bar-fill { background: var(--r3-teal); }
+
+
+.r3wrap .pm-drivers { display: flex; flex-wrap: wrap; gap: 4px; }
+
+
+.r3wrap .pm-driver { font-size: 10.5px; padding: 2px 7px; border-radius: 999px; font-weight: 500; }
+
+
+.r3wrap .pm-driver.high { background: #d1fae5; color: #065f46; }
+
+
+.r3wrap .pm-driver.low { background: #fee2e2; color: #991b1b; }
+
+
+.r3wrap .pm-empty { padding: 20px 14px; text-align: center; color: var(--r3-ink-40); font-size: 13px; line-height: 1.6; }
+
+
+/* ═══════════════════════════════════
+   MODALS
+═══════════════════════════════════ */
+
+.r3wrap .overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(18,18,18,0.55); z-index: 200; align-items: center; justify-content: center;
+}
+
+
+.r3wrap .overlay.open { display: flex; }
+
+
+.r3wrap .modal {
+  background: var(--r3-white); border-radius: 10px; max-height: 88vh;
+  overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+
+.r3wrap .modal-head {
+  padding: 18px 20px 14px; border-bottom: 1px solid var(--r3-canvas-2);
+  display: flex; align-items: flex-start; justify-content: space-between;
+}
+
+
+.r3wrap .modal-title { font-size: 15px; font-weight: 700; color: var(--r3-ink); }
+
+
+.r3wrap .modal-sub { font-size: 12px; color: var(--r3-ink-40); margin-top: 3px; line-height: 1.5; max-width: 440px; }
+
+
+.r3wrap .modal-x { cursor: pointer; font-size: 18px; color: var(--r3-ink-40); line-height: 1; padding: 2px 4px; flex-shrink: 0; }
+
+
+.r3wrap .modal-x:hover { color: var(--r3-ink); }
+
+
+.r3wrap .modal-body { padding: 16px 20px; }
+
+
+.r3wrap .modal-section-label {
+  font-size: 10px; font-weight: 700; color: var(--r3-ink-40); text-transform: uppercase;
+  letter-spacing: 0.6px; margin-bottom: 12px;
+}
+
+
+/* Benchmark modal */
+
+.r3wrap #benchmarkOverlay .modal { width: 560px; }
+
+
+.r3wrap .option-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+
+
+.r3wrap .opt-card {
+  border: 1.5px solid var(--r3-canvas-1); border-radius: 7px; padding: 12px 14px;
+  cursor: pointer; transition: border-color 0.1s, background 0.1s;
+}
+
+
+.r3wrap .opt-card:hover:not(.selected) { border-color: var(--r3-teal); background: var(--r3-teal-light); }
+
+
+.r3wrap .opt-card.selected { border-color: var(--r3-teal); background: var(--r3-teal-light); }
+
+
+.r3wrap .opt-card-name { font-size: 13px; font-weight: 600; color: var(--r3-ink); margin-bottom: 4px; }
+
+
+.r3wrap .opt-card.selected .opt-card-name::before { content: "✓  "; color: var(--r3-teal); }
+
+
+.r3wrap .opt-card-desc { font-size: 11.5px; color: var(--r3-ink-40); line-height: 1.45; }
+
+
+.r3wrap .opt-card-n { font-size: 11px; font-weight: 700; margin-top: 6px; }
+
+
+.r3wrap .opt-card.selected .opt-card-n { color: var(--r3-teal); }
+
+
+.r3wrap .opt-card:not(.selected) .opt-card-n { color: var(--r3-ink-40); }
+
+
+
+.r3wrap .custom-panel {
+  border: 1px solid var(--r3-canvas-1); border-radius: 7px;
+  background: var(--r3-canvas-2); padding: 14px; margin-bottom: 12px; display: none;
+}
+
+
+.r3wrap .custom-panel.open { display: block; }
+
+
+.r3wrap .custom-field-label {
+  font-size: 12px; font-weight: 600; color: var(--r3-ink-80); margin-bottom: 7px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+
+.r3wrap .comp-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+
+
+.r3wrap .comp-chip {
+  font-size: 12px; padding: 4px 10px; border-radius: 999px;
+  border: 1px solid var(--r3-canvas-1); cursor: pointer; color: var(--r3-ink-80);
+  background: var(--r3-white); transition: all 0.1s;
+}
+
+
+.r3wrap .comp-chip:hover:not(.active) { border-color: var(--r3-teal); color: var(--r3-teal); }
+
+
+.r3wrap .comp-chip.active { background: var(--r3-teal); color: white; border-color: var(--r3-teal); }
+
+
+.r3wrap .season-checks { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+
+
+.r3wrap .season-check { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--r3-ink-80); cursor: pointer; }
+
+
+.r3wrap .season-check input { cursor: pointer; accent-color: var(--r3-teal); width: 14px; height: 14px; }
+
+
+.r3wrap .season-early-tag {
+  font-size: 10px; background: #fef3c7; color: #92400e;
+  border: 1px solid #fcd34d; border-radius: 4px; padding: 1px 5px;
+}
+
+
+.r3wrap .season-warn {
+  background: #fffbeb; border: 1px solid #fcd34d; border-radius: 5px;
+  padding: 8px 10px; font-size: 12px; color: #78350f; margin-top: 10px; display: none; line-height: 1.5;
+}
+
+
+.r3wrap .season-warn.show { display: block; }
+
+
+
+.r3wrap .sample-bar {
+  background: var(--r3-canvas-2); border-radius: 6px; padding: 10px 14px;
+  display: flex; align-items: center; justify-content: space-between; margin-top: 6px;
+}
+
+
+.r3wrap .sample-n { font-size: 16px; font-weight: 700; }
+
+
+.r3wrap .sample-n.good { color: var(--r3-teal); }
+
+
+.r3wrap .sample-n.warn { color: #d97706; }
+
+
+.r3wrap .sample-n.bad { color: var(--r3-red-1); }
+
+
+.r3wrap .sample-desc { font-size: 12px; color: var(--r3-ink-40); }
+
+
+.r3wrap .sample-indicator { font-size: 12px; font-weight: 600; }
+
+
+.r3wrap .sample-indicator.good { color: var(--r3-teal); }
+
+
+.r3wrap .sample-indicator.warn { color: #d97706; }
+
+
+.r3wrap .sample-indicator.bad { color: var(--r3-red-1); }
+
+
+/* Template modal */
+
+.r3wrap #templateOverlay .modal { width: 660px; }
+
+
+.r3wrap .tpl-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+
+
+.r3wrap .tpl-col { border: 1px solid var(--r3-canvas-1); border-radius: 7px; overflow: hidden; }
+
+
+.r3wrap .tpl-col-head { padding: 9px 14px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+
+
+.r3wrap .tpl-col-head.old { background: #fff7ed; color: #9a3412; border-bottom: 1px solid #fed7aa; }
+
+
+.r3wrap .tpl-col-head.new { background: var(--r3-teal-light); color: #134e4a; border-bottom: 1px solid #99f6e4; }
+
+
+.r3wrap .tpl-col-body { padding: 12px 14px; }
+
+
+
+.r3wrap .pos-grid-mini { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; margin-bottom: 8px; }
+
+
+.r3wrap .pos-btn-mini {
+  padding: 3px 2px; border: 1px solid var(--r3-canvas-1); border-radius: 3px;
+  text-align: center; font-size: 9px; color: var(--r3-ink-40); background: var(--r3-white); cursor: pointer;
+}
+
+
+.r3wrap .pos-btn-mini.sel { background: var(--r3-blue); color: white; border-color: var(--r3-blue); }
+
+
+.r3wrap .pos-btn-mini.sel-warn { background: var(--r3-red-1); color: white; border-color: var(--r3-red-1); }
+
+
+.r3wrap .tpl-old-note {
+  font-size: 11px; color: #78350f; line-height: 1.5; background: #fff7ed;
+  border-radius: 4px; padding: 7px 9px; margin-top: 6px;
+}
+
+
+.r3wrap .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+
+.r3wrap .role-btn {
+  padding: 8px 10px; border: 1px solid var(--r3-canvas-1); border-radius: 5px;
+  font-size: 12px; font-weight: 500; color: var(--r3-ink-80); cursor: pointer;
+  transition: all 0.1s; background: var(--r3-white); text-align: left;
+}
+
+
+.r3wrap .role-btn:hover:not(.sel) { border-color: var(--r3-teal); color: var(--r3-teal); }
+
+
+.r3wrap .role-btn.sel { border-color: var(--r3-teal); background: var(--r3-teal-light); color: #134e4a; font-weight: 700; }
+
+
+.r3wrap .role-btn.sel::before { content: "✓ "; }
+
+
+.r3wrap .role-sub { font-size: 10px; color: var(--r3-ink-40); display: block; margin-top: 1px; font-weight: 400; }
+
+
+.r3wrap .role-btn.sel .role-sub { color: rgba(19,96,100,0.6); }
+
+
+.r3wrap .tpl-new-note {
+  font-size: 11px; color: #134e4a; line-height: 1.5; background: var(--r3-teal-light);
+  border-radius: 4px; padding: 7px 9px; margin-top: 8px;
+}
+
+
+/* Eval context tooltip */
+
+.r3wrap .tooltip-modal {
+  display: none; position: fixed; inset: 0; z-index: 300;
+  align-items: center; justify-content: center; background: rgba(18,18,18,0.4);
+}
+
+
+.r3wrap .tooltip-modal.open { display: flex; }
+
+
+.r3wrap .tooltip-box {
+  background: var(--r3-white); border-radius: 10px; padding: 18px 20px;
+  max-width: 340px; box-shadow: 0 12px 40px rgba(0,0,0,0.16);
+}
+
+
+.r3wrap .tooltip-box h4 { font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--r3-ink); }
+
+
+.r3wrap .tooltip-box p { font-size: 12.5px; color: var(--r3-ink-80); line-height: 1.65; }
+
+
+.r3wrap .tooltip-box .close-tip { margin-top: 12px; text-align: right; font-size: 12px; color: var(--r3-blue); cursor: pointer; font-weight: 600; }
+
+
+/* Modal footer */
+
+.r3wrap .modal-foot {
+  padding: 12px 20px; border-top: 1px solid var(--r3-canvas-2);
+  display: flex; justify-content: flex-end; gap: 8px;
+}
+
+
+.r3wrap .btn { padding: 8px 16px; border-radius: 5px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: background 0.1s; font-family: inherit; }
+
+
+.r3wrap .btn-ghost { background: var(--r3-white); border: 1px solid var(--r3-canvas-1); color: var(--r3-ink-80); }
+
+
+.r3wrap .btn-ghost:hover { background: var(--r3-canvas-2); }
+
+
+.r3wrap .btn-primary { background: var(--r3-teal); color: white; }
+
+
+.r3wrap .btn-primary:hover { background: #0f4f53; }
+
+
+.r3wrap .btn-blue { background: var(--r3-blue); color: white; }
+
+
+.r3wrap .btn-blue:hover { background: #1e4e8c; }
+
+
+/* Scrollbar */
+
+.r3wrap ::-webkit-scrollbar { width: 5px; }
+
+
+.r3wrap ::-webkit-scrollbar-track { background: transparent; }
+
+
+.r3wrap ::-webkit-scrollbar-thumb { background: var(--r3-canvas-1); border-radius: 3px; }
+
+
+.r3wrap {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 13px;
+}
+</style>
+
+<div class="page active" id="page-radar">
+  <div class="r3wrap">
+<!-- ═══════════════════════════════════
+  LEFT ICON NAV
+═══════════════════════════════════ -->
+<nav class="icon-nav">
+  <div class="icon-nav-logo">
+    <!-- Hudl/StatsBomb logo mark -->
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+      <rect width="28" height="28" rx="6" fill="#1993ff" opacity="0.15"/>
+      <path d="M8 8h5v5H8V8zm7 0h5v5h-5V8zM8 15h5v5H8v-5zm7 7h5v-5h-5v5z" fill="#E6F2FF" opacity="0.9"/>
+    </svg>
+  </div>
+  <div class="icon-nav-items">
+    <!-- Playlist -->
+    <div class="nav-item" title="Playlist">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M18 8L9 13V3L18 8z" fill="#E6F2FF" opacity="0.7"/><path d="M8 22H20V20H8V22zM8 16v2h12v-2H8z" fill="#E6F2FF" opacity="0.7"/><path d="M4 22h2v-2H4v2zM4 16v2h2v-2H4z" fill="#E6F2FF" opacity="0.7"/></svg>
+    </div>
+    <!-- Player (ACTIVE) -->
+    <div class="nav-item active" title="Player Analysis">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" fill="#E6F2FF"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#E6F2FF" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>
+    </div>
+    <!-- Team -->
+    <div class="nav-item" title="Team Analysis">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" fill="#E6F2FF" opacity="0.7"/><circle cx="16" cy="8" r="3" fill="#E6F2FF" opacity="0.7"/><path d="M2 19c0-3 3-5.5 7-5.5s7 2.5 7 5.5" stroke="#E6F2FF" stroke-width="1.6" stroke-linecap="round" fill="none" opacity="0.7"/><path d="M16 13.5c2.5.5 5 2.5 5 5.5" stroke="#E6F2FF" stroke-width="1.6" stroke-linecap="round" fill="none" opacity="0.7"/></svg>
+    </div>
+    <!-- Search -->
+    <div class="nav-item" title="Search">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6" stroke="#E6F2FF" stroke-width="1.8" opacity="0.7" fill="none"/><path d="M20 20l-3-3" stroke="#E6F2FF" stroke-width="1.8" stroke-linecap="round" opacity="0.7"/></svg>
+    </div>
+  </div>
+  <div class="icon-nav-bottom">
+    <!-- Settings -->
+    <div class="nav-item" title="Settings">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" fill="none" stroke="#E6F2FF" stroke-width="1.6" opacity="0.5"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5.6 5.6l1.4 1.4M16.6 16.6l1.4 1.4M5.6 18.4l1.4-1.4M16.6 7.4l1.4-1.4" stroke="#E6F2FF" stroke-width="1.6" stroke-linecap="round" opacity="0.5"/></svg>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════
+  RIGHT COLUMN
+═══════════════════════════════════ -->
+<div class="right-col">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-lhs">
+      <div class="team-badge" id="teamBadge" style="background:#c8102e;">LFC</div>
+      <span class="player-name" id="playerName">Virgil van Dijk</span>
+      <span class="player-name-chevron">▾</span>
+      <div class="topbar-divider"></div>
+      <span class="scenario-label">Scenario</span>
+      <div class="scenario-tab" id="sw-vandijk" onclick="switchPlayer('vandijk')">Virgil van Dijk · CB · Liverpool</div>
+      <div class="scenario-tab active" id="sw-semenyo" onclick="switchPlayer('semenyo')">
+        Antoine Semenyo · Bournemouth <span class="multi-badge">MULTI-POSITION</span>
+      </div>
+      <div class="topbar-divider"></div>
+      <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;white-space:nowrap;" onclick="openTemplateModal()">⚙ Template Redesign</button>
+      <span class="proto-pill">PROTOTYPE v3</span>
+    </div>
+    <div class="topbar-rhs">
+      <div class="icon-btn" title="Search">🔍</div>
+      <div class="icon-btn" title="Download">⬇</div>
+      <div class="icon-btn" title="More">⋯</div>
+    </div>
+  </div>
+
+  <!-- SUBNAV -->
+  <div class="subnav">
+    <div class="subnav-tab">Dashboard</div>
+    <div class="subnav-tab active">Radar</div>
+    <div class="subnav-tab">Pitch Visualizations</div>
+    <div class="subnav-tab">Match Stats</div>
+    <div class="subnav-tab">Physical</div>
+  </div>
+
+  <!-- MAIN BODY -->
+  <div class="main-body">
+
+    <!-- FILTERS -->
+    <div class="filters">
+      <div class="filters-head">
+        <span class="filters-title">Filters</span>
+        <div class="filters-controls">
+          <div class="icon-btn" style="width:26px;height:26px;font-size:12px;">↩</div>
+        </div>
+      </div>
+
+      <!-- ── Competition & Season ── -->
+      <div class="filter-section">
+        <div class="filter-section-head static">
+          <span class="filter-section-title">Competition &amp; Season</span>
+        </div>
+        <div class="cs-selector" id="compSeasonChips">
+          <!-- populated by buildCompSeasonChips() in updateAll() -->
+        </div>
+      </div>
+
+      <!-- ── Matches (collapsible) ── -->
+      <div class="filter-section">
+        <div class="filter-section-head" onclick="toggleFilterSection('matchesSectionBody', this)">
+          <span class="filter-section-title">Matches</span>
+          <span class="filter-section-caret">∧</span>
+        </div>
+        <div class="filter-section-body" id="matchesSectionBody">
+          <div class="period-toggle">
+            <div class="period-tab active">Period</div>
+            <div class="period-tab">Date Range</div>
+          </div>
+          <div class="field-label" style="margin-top:0;">Period</div>
+          <select class="filter-select">
+            <option>All matches</option>
+            <option>Last 5 matches</option>
+            <option>Last 10 matches</option>
+            <option>Last 15 matches</option>
+          </select>
+          <div class="field-label">Game Type</div>
+          <select class="filter-select" id="matchFilter" onchange="handleMatchFilter()">
+            <option value="all">Home &amp; Away</option>
+            <option value="home">Home only</option>
+            <option value="away">Away only</option>
+          </select>
+          <div class="match-select-row">
+            <div>
+              <div class="field-label" style="margin-top:0;">Match</div>
+              <div class="match-all-text">All selected</div>
+            </div>
+            <button class="select-btn">Select</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Opponent Strength ── -->
+      <div class="filter-section">
+        <div class="filter-section-head" onclick="toggleFilterSection('strengthSectionBody', this)">
+          <span class="filter-section-title">Opponent Strength</span>
+          <span class="filter-section-caret">∧</span>
+        </div>
+        <div class="filter-section-body" id="strengthSectionBody">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px;">
+            <span class="field-label" style="margin:0;">Minimum strength</span>
+            <span style="font-size:18px;font-weight:800;color:var(--blue);" id="strengthVal">0</span>
+          </div>
+          <input type="range" min="0" max="100" value="0" step="1" id="strengthSlider" oninput="handleStrengthFilter()" style="width:100%;accent-color:var(--blue);">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--ink-40);margin-top:2px;">
+            <span>All opponents</span>
+            <span>Elite only</span>
+          </div>
+
+          <!-- Team reference markers -->
+          <div style="margin-top:10px;font-size:10px;color:var(--ink-60);" id="strengthRefTeam">
+            Showing all matches
+          </div>
+
+          <!-- Match count -->
+          <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:11px;color:var(--ink-60);">Matches included</span>
+            <span style="font-size:12px;font-weight:700;color:var(--ink);" id="strengthMatchCount">22 of 22</span>
+          </div>
+          <div style="font-size:10px;color:var(--ink-40);margin-top:2px;" id="strengthSeasonBreakdown"></div>
+
+          <!-- Your club default (personalised) -->
+          <div id="strengthMyClub" style="margin-top:10px;"></div>
+
+          <!-- Quick-set buttons for notable teams -->
+          <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;" id="strengthQuickBtns">
+          </div>
+
+          <!-- Filter conflict warning -->
+          <div id="strengthConflictWarn" style="display:none;margin-top:8px;padding:6px 8px;background:var(--amber-light);border-radius:6px;font-size:10px;color:var(--amber);line-height:1.4;">
+          </div>
+
+          <!-- Match log (collapsible, grouped by season) -->
+          <div id="strengthMatchLogWrap" style="margin-top:8px;display:none;">
+            <div id="strengthMatchLogToggle" onclick="toggleMatchLog()" style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:10px;font-weight:600;color:var(--blue);text-transform:uppercase;letter-spacing:0.04em;user-select:none;">
+              <span id="strengthMatchLogCaret" style="transition:transform 0.15s;display:inline-block;">▸</span>
+              <span id="strengthMatchLogLabel">Show match log</span>
+            </div>
+            <div id="strengthMatchLog" style="max-height:200px;overflow-y:auto;display:none;margin-top:4px;"></div>
+          </div>
+
+          <!-- Methodology note -->
+          <div style="margin-top:10px;padding:8px;background:var(--canvas-2);border-radius:6px;font-size:10px;color:var(--ink-40);line-height:1.5;">
+            <strong style="color:var(--ink-60);">Per-season strength model</strong><br>
+            Each opponent scored 0–100 based on their xGD in that specific season + league coefficient. Villa 23/24 = 68 but 25/26 = 37.
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Player (collapsible) ── -->
+      <div class="filter-section">
+        <div class="filter-section-head" onclick="toggleFilterSection('playerSectionBody', this)">
+          <span class="filter-section-title">Player</span>
+          <span class="filter-section-caret">∧</span>
+        </div>
+        <div class="filter-section-body" id="playerSectionBody">
+          <div class="field-label" style="margin-top:0;">Position</div>
+          <select class="filter-select" id="positionFilter" onchange="handlePositionFilter()"></select>
+
+          <!-- Evaluation context box -->
+          <div class="eval-context-box" id="evalContextBox" style="margin-top:10px;">
+            <div class="eval-context-label">
+              Evaluation context
+              <span class="eval-info" onclick="showEvalTooltip()">?</span>
+            </div>
+            <div class="eval-context-value" id="evalContextValue">Centre Back</div>
+            <div class="eval-context-sub" id="evalContextSub">Primary position · 6,904 mins</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Warnings (inline, below sections) -->
+      <div class="warn yellow" id="warnMinutes" style="display:none;margin:8px 16px;">
+        <span class="warn-icon">⚠️</span>
+        <span id="warnMinutesText"></span>
+      </div>
+      <div class="warn blue" id="warnMismatch" style="display:none;margin:8px 16px;">
+        <span class="warn-icon">ℹ️</span>
+        <span>Stats filtered to <strong>home matches</strong>, but benchmark uses all matches. Percentiles may be slightly inflated.</span>
+      </div>
+      <div class="warn yellow" id="warnStrengthConflict" style="display:none;margin:8px 16px;">
+        <span class="warn-icon">⚠️</span>
+        <span id="warnStrengthConflictText"></span>
+      </div>
+
+    </div><!-- /filters -->
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- RADAR PANEL -->
+      <div class="panel radar-panel">
+        <div class="panel-header">
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:11px;font-weight:600;color:var(--ink-40);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;">Radar</div>
+            <!-- Profile selector — matches designer pattern -->
+            <div class="profile-selector" id="profileSelector" onclick="toggleProfileDropdown(event)">
+              <span class="profile-selector-label">Profile</span>
+              <span class="profile-selector-name" id="profileSelectorName">Ball-Playing CB</span>
+              <span class="profile-selector-pct" id="profileSelectorPct">94%</span>
+              <span class="profile-selector-chevron">▾</span>
+              <div class="profile-dropdown" id="profileDropdown" onclick="event.stopPropagation()">
+                <div class="profile-dropdown-head">Best Profile Matches</div>
+                <div id="profileDropdownItems"></div>
+                <div class="profile-dropdown-footer" onclick="switchTab('pm'); closeProfileDropdown()">
+                  <span>See all profiles</span><span>→</span>
+                </div>
+              </div>
+            </div>
+            <div class="benchmark-context" id="radarBenchmarkContext" style="margin-top:4px;">
+              Benchmarked against: <strong id="ctxName">Professional Football</strong> · <span id="ctxDetail">Top 35 comps · 2023/24 + 2024/25 · CBs</span>
+            </div>
+          </div>
+          <div class="icon-btn">⬇</div>
+        </div>
+        <div class="radar-area">
+          <svg id="radarSVG" width="420" height="380" viewBox="0 0 420 380"></svg>
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL (tabbed) -->
+      <div class="panel right-panel">
+        <div class="panel-tabs">
+          <div class="panel-tab active" id="tabBtn-pct" onclick="switchTab('pct')">Percentile table</div>
+          <div class="panel-tab" id="tabBtn-pm" onclick="switchTab('pm')">Profile match</div>
+        </div>
+
+        <!-- Percentile table tab -->
+        <div class="tab-content active" id="tab-pct">
+
+          <!-- Benchmark selector — contextual, lives next to the percentile table -->
+          <div class="benchmark-row" onclick="openBenchmarkModal()">
+            <div>
+              <div class="benchmark-row-label">Compared against</div>
+              <div class="benchmark-row-name" id="sidebarBenchmarkName">Professional Football</div>
+              <div class="benchmark-row-detail" id="sidebarBenchmarkDetail">Top 35 comps · 2023/24 + 2024/25 · CBs</div>
+            </div>
+            <span class="benchmark-row-chevron">▾</span>
+          </div>
+
+          <div class="table-subhead">
+            <span class="col-metric">Metric</span>
+            <span class="col-val">Value</span>
+            <span class="col-pct">Percentile</span>
+          </div>
+          <div id="tableBody" style="overflow-y:auto;flex:1;"></div>
+          <div class="context-footer">
+            <div class="ctx-item">
+              <div class="ctx-label">Mins played</div>
+              <div class="ctx-val" id="ctxMins">6,904</div>
+            </div>
+            <div class="ctx-item">
+              <div class="ctx-label">Competition</div>
+              <div class="ctx-val" id="ctxComp">PL + FA Cup</div>
+            </div>
+            <div class="ctx-item">
+              <div class="ctx-label">Season</div>
+              <div class="ctx-val" id="ctxSeason">25/26, 24/25</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profile match tab -->
+        <div class="tab-content" id="tab-pm">
+          <div class="pm-header">
+            <div class="pm-eval-row">
+              <span class="pm-eval-label">Matching as:</span>
+              <span class="pm-eval-value" id="pmEvalValue">Centre Back</span>
+              <span class="pm-eval-badge" id="pmEvalBadge">primary position</span>
+              <span class="pm-eval-change" onclick="focusPositionFilter()">Change ↗</span>
+            </div>
+            <div id="pmEvalNote" style="font-size:11px;color:var(--ink-40);margin-top:4px;"></div>
+          </div>
+          <div id="pmSecondary" style="display:none;" class="pm-secondary"></div>
+          <div class="pm-list" id="pmList"></div>
+        </div>
+
+      </div><!-- /right-panel -->
+
+    </div><!-- /content -->
+  </div><!-- /main-body -->
+</div><!-- /right-col -->
+
+
+<!-- ══ BENCHMARK MODAL ══ -->
+<div class="overlay" id="benchmarkOverlay" onclick="handleBMOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title">Change benchmark cohort</div>
+        <div class="modal-sub" id="bmModalSub">Choose the population this player's stats are compared against. Independent of your Viewing filter.</div>
+      </div>
+      <span class="modal-x" onclick="closeBenchmarkModal()">✕</span>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section-label">Select a benchmark</div>
+      <div class="option-grid">
+        <div class="opt-card selected" id="card-professional" onclick="selectCard('professional')">
+          <div class="opt-card-name">Professional Football</div>
+          <div class="opt-card-desc">Top 35 competitions worldwide. Always stable regardless of season timing.</div>
+          <div class="opt-card-n" id="n-professional">~2,400 CBs</div>
+        </div>
+        <div class="opt-card" id="card-league" onclick="selectCard('league')">
+          <div class="opt-card-name">Player's League</div>
+          <div class="opt-card-desc">Same competition as the player, last two seasons. Closer to a ranking than a benchmark at this sample size.</div>
+          <div class="opt-card-n" id="n-league">~68 CBs</div>
+        </div>
+        <div class="opt-card" id="card-elite" onclick="selectCard('elite')">
+          <div class="opt-card-name">Continental Elite</div>
+          <div class="opt-card-desc">Top 5 European leagues. Comparable quality of competition across Europe's leading domestic leagues.</div>
+          <div class="opt-card-n" id="n-elite">~340 CBs</div>
+        </div>
+        <div class="opt-card" id="card-custom" onclick="selectCard('custom')">
+          <div class="opt-card-name">Custom</div>
+          <div class="opt-card-desc">Pick your own competitions and seasons.</div>
+          <div class="opt-card-n" id="customN">Set below ↓</div>
+        </div>
+      </div>
+      <div class="custom-panel" id="customPanel">
+        <div class="custom-field-label"><span>Competitions</span><span style="font-size:11px;color:var(--ink-40);font-weight:400;">Select one or more</span></div>
+        <div class="comp-chips">
+          <span class="comp-chip active" data-comp="epl" onclick="toggleComp(this)">Premier League</span>
+          <span class="comp-chip" data-comp="laliga" onclick="toggleComp(this)">La Liga</span>
+          <span class="comp-chip" data-comp="bundesliga" onclick="toggleComp(this)">Bundesliga</span>
+          <span class="comp-chip" data-comp="seriea" onclick="toggleComp(this)">Serie A</span>
+          <span class="comp-chip" data-comp="ligue1" onclick="toggleComp(this)">Ligue 1</span>
+          <span class="comp-chip" data-comp="eredivisie" onclick="toggleComp(this)">Eredivisie</span>
+          <span class="comp-chip" data-comp="mls" onclick="toggleComp(this)">MLS</span>
+          <span class="comp-chip" data-comp="spl" onclick="toggleComp(this)">Saudi Pro League</span>
+          <span class="comp-chip" data-comp="championship" onclick="toggleComp(this)">Championship</span>
+          <span class="comp-chip" data-comp="jupiler" onclick="toggleComp(this)">Jupiler Pro League</span>
+        </div>
+        <div style="height:10px;"></div>
+        <div class="custom-field-label"><span>Seasons</span><span style="font-size:11px;color:var(--ink-40);font-weight:400;">Select at least one full season</span></div>
+        <div class="season-checks">
+          <label class="season-check"><input type="checkbox" id="s2526" onchange="updateCustomN()" checked><span>2025/26</span><span class="season-early-tag">Early season</span></label>
+          <label class="season-check"><input type="checkbox" id="s2425" onchange="updateCustomN()" checked><span>2024/25</span></label>
+          <label class="season-check"><input type="checkbox" id="s2324" onchange="updateCustomN()"><span>2023/24</span></label>
+          <label class="season-check"><input type="checkbox" id="s2223" onchange="updateCustomN()"><span>2022/23</span></label>
+        </div>
+        <div class="season-warn" id="seasonWarn">
+          <strong>⚠️ Early season</strong> — 2025/26 has only 8 rounds played. With only this season selected, percentiles may be unstable. We recommend including 2024/25.
+        </div>
+      </div>
+      <div class="sample-bar">
+        <div>
+          <div class="sample-n good" id="sampleN">~2,400</div>
+          <div class="sample-desc">players in this benchmark cohort</div>
+        </div>
+        <div class="sample-indicator good" id="sampleIndicator">● Reliable</div>
+      </div>
+      <div class="warn orange" id="smallNWarn" style="display:none;margin-top:10px;">
+        <span class="warn-icon">⚠️</span>
+        <span>Small cohort — with fewer than 80 players, percentile values become less statistically meaningful. Consider adding more competitions or seasons.</span>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeBenchmarkModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="applyBenchmark()">Apply benchmark</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TEMPLATE CREATION MODAL ══ -->
+<div class="overlay" id="templateOverlay" onclick="handleTplOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title">Template creation — Position selection redesign</div>
+        <div class="modal-sub">Comparing the current 24-position multi-select with the proposed simplified role group picker. The role group sets the benchmark pool — it answers "compared against whom?"</div>
+      </div>
+      <span class="modal-x" onclick="closeTemplateModal()">✕</span>
+    </div>
+    <div class="modal-body">
+      <div class="tpl-compare">
+        <div class="tpl-col">
+          <div class="tpl-col-head old">⚠️ Current approach — 24 positions</div>
+          <div class="tpl-col-body">
+            <div style="font-size:11.5px;color:var(--ink-40);margin-bottom:10px;line-height:1.5;">User multi-selects from all 24 granular positions. The system then picks the single position with the most global minutes as the benchmark — invisibly.</div>
+            <div class="pos-grid-mini" id="oldPosGrid"></div>
+            <div class="tpl-old-note">🚨 With RCB, CB and LCB selected, the system silently benchmarks against <strong>LCB</strong> because it has the most minutes globally — the user never sees this.</div>
+          </div>
+        </div>
+        <div class="tpl-col">
+          <div class="tpl-col-head new">✓ Proposed — Role group picker</div>
+          <div class="tpl-col-body">
+            <div style="font-size:11.5px;color:var(--ink-40);margin-bottom:10px;line-height:1.5;">User picks one role group. This directly sets the benchmark pool — transparent and simple. The metrics in the template define the style profile.</div>
+            <div class="role-grid" id="roleGrid"></div>
+            <div class="tpl-new-note">✅ Selecting "Centre Back" benchmarks against all CB / LCB / RCB players combined. What differentiates 8 striker templates is entirely the metrics they contain.</div>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--canvas-2);border-radius:7px;padding:12px 14px;border:1px solid var(--canvas-1);">
+        <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:5px;">Key design decision</div>
+        <div style="font-size:12px;color:var(--ink-80);line-height:1.65;">Template position selection serves <strong>one purpose only: defining the benchmark pool</strong>. The style of player is defined entirely by the metrics in the template. Separating these two concerns makes both simpler and more understandable.</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeTemplateModal()">Close</button>
+      <button class="btn btn-blue" onclick="closeTemplateModal()">Got it — continue to metrics</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ EVAL CONTEXT TOOLTIP ══ -->
+<div class="tooltip-modal" id="evalTooltip" onclick="hideEvalTooltip()">
+  <div class="tooltip-box" onclick="event.stopPropagation()">
+    <h4>What is Evaluation Context?</h4>
+    <p>This tells you which position role is being used to: <strong>(1)</strong> set the benchmark population, and <strong>(2)</strong> decide which profile templates are shown in the Profile Match tab.</p>
+    <p style="margin-top:8px;">When your Position filter is set to <strong>All positions</strong>, we derive it from the player's primary position in the selected data period — the role where they've played the most minutes.</p>
+    <p style="margin-top:8px;">When you <strong>filter to a specific position</strong> (e.g. "Forward only"), the evaluation context switches to match — because you've told us how you want to evaluate them.</p>
+    <div class="close-tip" onclick="hideEvalTooltip()">Got it ✕</div>
+  </div>
+</div>
+  </div>
+</div>
+
+<script>
+/* ═══ Radar v3 JS (scoped) ═══════════════════════════════════════════════ */
+// ══════════════════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════════════════
+
+const PLAYERS = {
+  vandijk: {
+    name: 'Virgil van Dijk',
+    teamAbbr: 'LFC', teamColor: '#c8102e',
+    competition: 'Premier League + FA Cup', season: '25/26, 24/25',
+    totalMins: 6904,
+    positions: [
+      { id: 'cb', label: 'Centre Back (6,904 mins)', evalGroup: 'cb', evalLabel: 'Centre Back', evalMins: 6904, evalType: 'primary' },
+    ],
+    secondaryPosition: null,
+    metrics: {
+      cb: [
+        { name: 'Aerial Win%',     value: '78',    pct: 96, angle: -90  },
+        { name: 'Aerial Wins',     value: '4.2',   pct: 90, angle: -54  },
+        { name: 'OBV',             value: '0.15',  pct: 62, angle: -18  },
+        { name: 'Pass OBV',        value: '0.08',  pct: 72, angle:  18  },
+        { name: 'D&C OBV',         value: '0.034', pct: 35, angle:  54  },
+        { name: 'Fouls',           value: '0.4',   pct: 92, angle:  90  },
+        { name: 'Clearances',      value: '4.4',   pct: 40, angle: 126  },
+        { name: 'Blocks/Shot',     value: '0.057', pct: 40, angle: 162  },
+        { name: 'Tack/Drib Past%', value: '87',    pct: 90, angle: 198  },
+        { name: 'DA OBV',          value: '0.04',  pct: 57, angle: 234  },
+      ],
+    },
+    profileMatches: {
+      cb: [
+        { name: 'Ball-Playing CB',      pct: 94, top: true,
+          drivers: ['Pass OBV ↑','OBV ↑','Tack/Drib Past% ↑'], low: ['Clearances ↓','Blocks/Shot ↓'] },
+        { name: 'Aerial Dominance CB',  pct: 88, top: false,
+          drivers: ['Aerial Win% ↑','Aerial Wins ↑','Fouls ↑'], low: ['D&C OBV ↓'] },
+        { name: 'Progressive CB',       pct: 74, top: false,
+          drivers: ['DA OBV ↑','Pass OBV ↑'], low: ['Clearances ↓','Blocks/Shot ↓'] },
+        { name: 'Classic Stopper',      pct: 61, top: false,
+          drivers: ['Aerial Win% ↑'], low: ['Clearances ↓','Blocks/Shot ↓','D&C OBV ↓'] },
+      ],
+    },
+    profileMetrics: {
+      'ball-playing-cb': [
+        { name: 'Aerial Win%',     value: '78',    pct: 96, angle: -90  },
+        { name: 'Pass OBV',        value: '0.08',  pct: 72, angle: -54  },
+        { name: 'OBV',             value: '0.15',  pct: 62, angle: -18  },
+        { name: 'Prog. Carries',   value: '1.2',   pct: 68, angle:  18  },
+        { name: 'D&C OBV',         value: '0.034', pct: 35, angle:  54  },
+        { name: 'Tack/Drib Past%', value: '87',    pct: 90, angle:  90  },
+        { name: 'DA OBV',          value: '0.04',  pct: 57, angle: 126  },
+        { name: 'Fouls',           value: '0.4',   pct: 92, angle: 162  },
+        { name: 'Clearances',      value: '4.4',   pct: 40, angle: 198  },
+        { name: 'Blocks/Shot',     value: '0.057', pct: 40, angle: 234  },
+      ],
+      'aerial-dominance-cb': [
+        { name: 'Aerial Win%',     value: '78',    pct: 96, angle: -90  },
+        { name: 'Aerial Wins',     value: '4.2',   pct: 90, angle: -54  },
+        { name: 'Hdr on Target',   value: '1.8',   pct: 84, angle: -18  },
+        { name: 'Clearances',      value: '4.4',   pct: 58, angle:  18  },
+        { name: 'Blocks/Shot',     value: '0.057', pct: 52, angle:  54  },
+        { name: 'DA OBV',          value: '0.04',  pct: 57, angle:  90  },
+        { name: 'Tack/Drib Past%', value: '87',    pct: 90, angle: 126  },
+        { name: 'Fouls',           value: '0.4',   pct: 92, angle: 162  },
+        { name: 'Pass OBV',        value: '0.08',  pct: 48, angle: 198  },
+        { name: 'OBV',             value: '0.15',  pct: 42, angle: 234  },
+      ],
+      'progressive-cb': [
+        { name: 'D&C OBV',         value: '0.034', pct: 35, angle: -90  },
+        { name: 'Prog. Carries',   value: '1.2',   pct: 68, angle: -54  },
+        { name: 'Pass OBV',        value: '0.08',  pct: 72, angle: -18  },
+        { name: 'OBV',             value: '0.15',  pct: 62, angle:  18  },
+        { name: 'Tack/Drib Past%', value: '87',    pct: 90, angle:  54  },
+        { name: 'DA OBV',          value: '0.04',  pct: 57, angle:  90  },
+        { name: 'Fouls',           value: '0.4',   pct: 92, angle: 126  },
+        { name: 'Aerial Win%',     value: '78',    pct: 96, angle: 162  },
+        { name: 'Clearances',      value: '4.4',   pct: 40, angle: 198  },
+        { name: 'Blocks/Shot',     value: '0.057', pct: 40, angle: 234  },
+      ],
+      'classic-stopper': [
+        { name: 'Clearances',      value: '4.4',   pct: 58, angle: -90  },
+        { name: 'Blocks/Shot',     value: '0.057', pct: 55, angle: -54  },
+        { name: 'Aerial Win%',     value: '78',    pct: 96, angle: -18  },
+        { name: 'Aerial Wins',     value: '4.2',   pct: 90, angle:  18  },
+        { name: 'DA OBV',          value: '0.04',  pct: 57, angle:  54  },
+        { name: 'Tack/Drib Past%', value: '87',    pct: 90, angle:  90  },
+        { name: 'Fouls',           value: '0.4',   pct: 92, angle: 126  },
+        { name: 'Pass OBV',        value: '0.08',  pct: 44, angle: 162  },
+        { name: 'OBV',             value: '0.15',  pct: 38, angle: 198  },
+        { name: 'D&C OBV',         value: '0.034', pct: 25, angle: 234  },
+      ],
+    },
+    benchmarkNs: { professional: '~2,400 CBs', league: '~68 CBs', elite: '~340 CBs' },
+    radarTemplate: 'Centre Back', lowMinsWarning: null,
+  },
+  semenyo: {
+    name: 'Antoine Semenyo',
+    teamAbbr: 'AFC', teamColor: '#d11524',
+    competition: 'Premier League', season: '2024/25',
+    totalMins: 1775,
+    positions: [
+      { id: 'winger',  label: 'Winger — LW · RW · LM · RM  (1,549 mins · 87%)', evalGroup: 'winger',  evalLabel: 'Winger',      evalMins: 1549, evalType: 'primary' },
+      { id: 'cm',      label: 'Central Mid — RCM · LCM  (147 mins · 8%)',        evalGroup: 'cm',      evalLabel: 'Central Mid', evalMins: 147,  evalType: 'filter'  },
+      { id: 'forward', label: 'Forward — RCF  (52 mins · 3%)',                   evalGroup: 'forward', evalLabel: 'Forward',     evalMins: 52,   evalType: 'filter'  },
+    ],
+    secondaryPosition: { label: 'Central Mid', group: 'cm', mins: 147, pct: 8, id: 'cm' },
+    metrics: {
+      winger: [
+        { name: 'Prog. Carries',    value: '5.8',  pct: 82, angle: -90  },
+        { name: 'xG / 90',          value: '0.31', pct: 67, angle: -54  },
+        { name: 'Dribble Succ%',    value: '58',   pct: 74, angle: -18  },
+        { name: 'Crosses / 90',     value: '2.4',  pct: 55, angle:  18  },
+        { name: 'Press Duels Won%', value: '52',   pct: 63, angle:  54  },
+        { name: 'Chances Created',  value: '1.8',  pct: 71, angle:  90  },
+        { name: 'xA / 90',          value: '0.18', pct: 62, angle: 126  },
+        { name: 'Fouls Won',        value: '2.2',  pct: 78, angle: 162  },
+        { name: 'Sprint Distance',  value: '28.4', pct: 85, angle: 198  },
+        { name: 'OBV',              value: '0.22', pct: 70, angle: 234  },
+      ],
+      cm: [
+        { name: 'Prog. Carries',    value: '4.2',  pct: 71, angle: -90  },
+        { name: 'Dribble Succ%',    value: '54',   pct: 66, angle: -54  },
+        { name: 'Passes / 90',      value: '38.4', pct: 38, angle: -18  },
+        { name: 'Pass Comp%',       value: '81',   pct: 42, angle:  18  },
+        { name: 'Pressures / 90',   value: '14.2', pct: 55, angle:  54  },
+        { name: 'OBV',              value: '0.14', pct: 52, angle:  90  },
+        { name: 'Chances Created',  value: '1.4',  pct: 60, angle: 126  },
+        { name: 'DA OBV',           value: '0.02', pct: 35, angle: 162  },
+        { name: 'Ball Wins / 90',   value: '3.8',  pct: 46, angle: 198  },
+        { name: 'Fwd Pass%',        value: '42',   pct: 48, angle: 234  },
+      ],
+      forward: [
+        { name: 'xG / 90',          value: '0.44', pct: 72, angle: -90  },
+        { name: 'Goals / 90',       value: '0.38', pct: 65, angle: -54  },
+        { name: 'Shots / 90',       value: '2.8',  pct: 58, angle: -18  },
+        { name: 'xA / 90',          value: '0.12', pct: 45, angle:  18  },
+        { name: 'Aerial Win%',      value: '44',   pct: 52, angle:  54  },
+        { name: 'Link-Up Passes',   value: '12.4', pct: 60, angle:  90  },
+        { name: 'Fouls Won',        value: '2.8',  pct: 82, angle: 126  },
+        { name: 'Press Duels Won%', value: '48',   pct: 55, angle: 162  },
+        { name: 'Prog. Carries',    value: '3.2',  pct: 61, angle: 198  },
+        { name: 'OBV',              value: '0.18', pct: 58, angle: 234  },
+      ],
+    },
+    profileMatches: {
+      winger: [
+        { name: 'Dynamic Winger',     pct: 87, top: true,
+          drivers: ['Prog. Carries ↑','Sprint Distance ↑','Dribble Succ% ↑'], low: ['Crosses / 90 ↓'] },
+        { name: 'Inside Forward',     pct: 72, top: false,
+          drivers: ['xG / 90 ↑','OBV ↑','Chances Created ↑'], low: ['Crosses / 90 ↓','Press Duels Won% ↓'] },
+        { name: 'Inverted Winger',    pct: 64, top: false,
+          drivers: ['Dribble Succ% ↑','xG / 90 ↑'], low: ['Crosses / 90 ↓','xA / 90 ↓'] },
+        { name: 'Wide Target Winger', pct: 43, top: false,
+          drivers: ['Fouls Won ↑'], low: ['Crosses / 90 ↓','Aerial Win% ↓'] },
+      ],
+      cm: [
+        { name: 'Box-to-Box CM',   pct: 63, top: true,
+          drivers: ['Prog. Carries ↑','Dribble Succ% ↑','Chances Created ↑'], low: ['Passes / 90 ↓','DA OBV ↓','Pass Comp% ↓'] },
+        { name: 'Shuttle CM',      pct: 51, top: false,
+          drivers: ['Pressures / 90 ↑','Ball Wins / 90 ↑'], low: ['Passes / 90 ↓','Fwd Pass% ↓'] },
+        { name: 'Advanced CM',     pct: 47, top: false,
+          drivers: ['Chances Created ↑','Prog. Carries ↑'], low: ['Pass Comp% ↓','DA OBV ↓'] },
+      ],
+      forward: [
+        { name: 'Pressing Forward',   pct: 71, top: true,
+          drivers: ['Fouls Won ↑','Press Duels Won% ↑'], low: ['Aerial Win% ↓','xG / 90 ↓'] },
+        { name: 'Advanced Forward',   pct: 68, top: false,
+          drivers: ['xG / 90 ↑','Goals / 90 ↑'], low: ['Aerial Win% ↓','Link-Up Passes ↓'] },
+        { name: 'Target Forward',     pct: 38, top: false,
+          drivers: ['Fouls Won ↑'], low: ['Aerial Win% ↓','Shots / 90 ↓','Goals / 90 ↓'] },
+      ],
+    },
+    profileMetrics: {
+      'dynamic-winger': [
+        { name: 'Prog. Carries',    value: '5.8',  pct: 82, angle: -90  },
+        { name: 'Sprint Distance',  value: '28.4', pct: 85, angle: -54  },
+        { name: 'Dribble Succ%',    value: '58',   pct: 74, angle: -18  },
+        { name: 'xG / 90',          value: '0.31', pct: 67, angle:  18  },
+        { name: 'Press Duels Won%', value: '52',   pct: 63, angle:  54  },
+        { name: 'OBV',              value: '0.22', pct: 70, angle:  90  },
+        { name: 'Fouls Won',        value: '2.2',  pct: 78, angle: 126  },
+        { name: 'Chances Created',  value: '1.8',  pct: 71, angle: 162  },
+        { name: 'Crosses / 90',     value: '2.4',  pct: 42, angle: 198  },
+        { name: 'xA / 90',          value: '0.18', pct: 62, angle: 234  },
+      ],
+      'inside-forward': [
+        { name: 'xG / 90',          value: '0.31', pct: 67, angle: -90  },
+        { name: 'Shots / 90',       value: '3.1',  pct: 72, angle: -54  },
+        { name: 'Dribble Succ%',    value: '58',   pct: 74, angle: -18  },
+        { name: 'Prog. Carries',    value: '5.8',  pct: 82, angle:  18  },
+        { name: 'OBV',              value: '0.22', pct: 70, angle:  54  },
+        { name: 'Chances Created',  value: '1.8',  pct: 71, angle:  90  },
+        { name: 'xA / 90',          value: '0.18', pct: 62, angle: 126  },
+        { name: 'Fouls Won',        value: '2.2',  pct: 78, angle: 162  },
+        { name: 'Crosses / 90',     value: '2.4',  pct: 36, angle: 198  },
+        { name: 'Sprint Distance',  value: '28.4', pct: 60, angle: 234  },
+      ],
+      'inverted-winger': [
+        { name: 'Dribble Succ%',    value: '58',   pct: 74, angle: -90  },
+        { name: 'xG / 90',          value: '0.31', pct: 67, angle: -54  },
+        { name: 'Shots / 90',       value: '3.1',  pct: 72, angle: -18  },
+        { name: 'Prog. Carries',    value: '5.8',  pct: 82, angle:  18  },
+        { name: 'OBV',              value: '0.22', pct: 70, angle:  54  },
+        { name: 'Fouls Won',        value: '2.2',  pct: 78, angle:  90  },
+        { name: 'Press Duels Won%', value: '52',   pct: 63, angle: 126  },
+        { name: 'Sprint Distance',  value: '28.4', pct: 85, angle: 162  },
+        { name: 'Crosses / 90',     value: '2.4',  pct: 36, angle: 198  },
+        { name: 'xA / 90',          value: '0.18', pct: 50, angle: 234  },
+      ],
+      'wide-target-winger': [
+        { name: 'Crosses / 90',     value: '2.4',  pct: 55, angle: -90  },
+        { name: 'Aerial Win%',      value: '41',   pct: 45, angle: -54  },
+        { name: 'Fouls Won',        value: '2.2',  pct: 78, angle: -18  },
+        { name: 'xA / 90',          value: '0.18', pct: 62, angle:  18  },
+        { name: 'Chances Created',  value: '1.8',  pct: 71, angle:  54  },
+        { name: 'Sprint Distance',  value: '28.4', pct: 85, angle:  90  },
+        { name: 'Dribble Succ%',    value: '58',   pct: 74, angle: 126  },
+        { name: 'Press Duels Won%', value: '52',   pct: 63, angle: 162  },
+        { name: 'xG / 90',          value: '0.31', pct: 50, angle: 198  },
+        { name: 'OBV',              value: '0.22', pct: 58, angle: 234  },
+      ],
+      'box-to-box-cm': [
+        { name: 'Prog. Carries',    value: '4.2',  pct: 71, angle: -90  },
+        { name: 'Dribble Succ%',    value: '54',   pct: 66, angle: -54  },
+        { name: 'Pressures / 90',   value: '14.2', pct: 55, angle: -18  },
+        { name: 'Ball Wins / 90',   value: '3.8',  pct: 46, angle:  18  },
+        { name: 'Chances Created',  value: '1.4',  pct: 60, angle:  54  },
+        { name: 'OBV',              value: '0.14', pct: 52, angle:  90  },
+        { name: 'Passes / 90',      value: '38.4', pct: 38, angle: 126  },
+        { name: 'Pass Comp%',       value: '81',   pct: 42, angle: 162  },
+        { name: 'DA OBV',           value: '0.02', pct: 35, angle: 198  },
+        { name: 'Fwd Pass%',        value: '42',   pct: 48, angle: 234  },
+      ],
+      'shuttle-cm': [
+        { name: 'Pressures / 90',   value: '14.2', pct: 55, angle: -90  },
+        { name: 'Ball Wins / 90',   value: '3.8',  pct: 46, angle: -54  },
+        { name: 'DA OBV',           value: '0.02', pct: 35, angle: -18  },
+        { name: 'Passes / 90',      value: '38.4', pct: 38, angle:  18  },
+        { name: 'Pass Comp%',       value: '81',   pct: 42, angle:  54  },
+        { name: 'Prog. Carries',    value: '4.2',  pct: 71, angle:  90  },
+        { name: 'OBV',              value: '0.14', pct: 52, angle: 126  },
+        { name: 'Chances Created',  value: '1.4',  pct: 60, angle: 162  },
+        { name: 'Fwd Pass%',        value: '42',   pct: 48, angle: 198  },
+        { name: 'Dribble Succ%',    value: '54',   pct: 66, angle: 234  },
+      ],
+      'advanced-cm': [
+        { name: 'Chances Created',  value: '1.4',  pct: 60, angle: -90  },
+        { name: 'Prog. Carries',    value: '4.2',  pct: 71, angle: -54  },
+        { name: 'OBV',              value: '0.14', pct: 52, angle: -18  },
+        { name: 'Dribble Succ%',    value: '54',   pct: 66, angle:  18  },
+        { name: 'xG / 90',          value: '0.22', pct: 55, angle:  54  },
+        { name: 'Fwd Pass%',        value: '42',   pct: 48, angle:  90  },
+        { name: 'Passes / 90',      value: '38.4', pct: 38, angle: 126  },
+        { name: 'Pass Comp%',       value: '81',   pct: 42, angle: 162  },
+        { name: 'DA OBV',           value: '0.02', pct: 35, angle: 198  },
+        { name: 'Ball Wins / 90',   value: '3.8',  pct: 46, angle: 234  },
+      ],
+    },
+    benchmarkNs: {
+      winger:  { professional: '~1,800 Wingers', league: '~52 Wingers',  elite: '~260 Wingers' },
+      cm:      { professional: '~2,200 CMs',     league: '~62 CMs',      elite: '~310 CMs'     },
+      forward: { professional: '~1,400 Forwards',league: '~44 Forwards', elite: '~200 Forwards'},
+    },
+    radarTemplate: 'Winger',
+    lowMinsWarning: 'Small sample — fewer than 200 mins in this position group. Stats may be volatile.',
+  },
+};
+
+const ROLE_GROUPS = [
+  { id: 'st',  label: 'Central Striker',          sub: 'ST, CF',           sel: false },
+  { id: 'wf',  label: 'Wide Forward / Winger',     sub: 'LW, RW, LWF, RWF', sel: true  },
+  { id: 'am',  label: 'Attacking Mid / No.10',     sub: 'CAM, SS',          sel: false },
+  { id: 'cm',  label: 'Central Midfielder',        sub: 'CM, LCM, RCM',     sel: false },
+  { id: 'dm',  label: 'Defensive / Holding Mid',   sub: 'CDM, LDM, RDM',    sel: false },
+  { id: 'fb',  label: 'Full Back',                 sub: 'LB, RB',           sel: false },
+  { id: 'wb',  label: 'Wing Back',                 sub: 'LWB, RWB',         sel: false },
+  { id: 'cb',  label: 'Centre Back',               sub: 'CB, LCB, RCB',     sel: false },
+  { id: 'gk',  label: 'Goalkeeper',                sub: 'GK',               sel: false },
+];
+
+const OLD_POSITIONS = ['GK','LCB','CB','RCB','LB','LWB','RB','RWB','LDM','CDM','RDM','LCM','CM','RCM','LAM','CAM','RAM','LW','LWF','RW','RWF','ST','CF'];
+const OLD_SEL = ['LCB','CB','RCB'];
+const OLD_WARN = ['LCB'];
+
+// ══════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════
+
+let currentPlayer = 'vandijk';
+let currentPosId = 'all';
+let currentProfileId = null; // null = auto (best match = index 0)
+let activeBenchmark = 'professional';
+let appliedBenchmark = 'professional';
+let activeTab = 'pct';
+
+// Close profile dropdown when clicking outside
+document.addEventListener('click', () => {
+  document.getElementById('profileSelector').classList.remove('open');
+  document.getElementById('profileDropdown').classList.remove('open');
+});
+
+// ══════════════════════════════════════════════════════════════
+// PLAYER SWITCH
+// ══════════════════════════════════════════════════════════════
+
+function switchPlayer(id) {
+  currentPlayer = id;
+  currentPosId = PLAYERS[id].positions[0].id; // default to primary position (no 'all' any more)
+  currentProfileId = null; // reset to best match
+  activeBenchmark = 'professional';
+  appliedBenchmark = 'professional';
+
+  document.getElementById('sw-vandijk').classList.toggle('active', id === 'vandijk');
+  document.getElementById('sw-semenyo').classList.toggle('active', id === 'semenyo');
+
+  const p = PLAYERS[id];
+  document.getElementById('teamBadge').textContent = p.teamAbbr;
+  document.getElementById('teamBadge').style.background = p.teamColor;
+  document.getElementById('playerName').textContent = p.name;
+
+  const sel = document.getElementById('positionFilter');
+  sel.innerHTML = '';
+  p.positions.forEach(pos => {
+    const opt = document.createElement('option');
+    opt.value = pos.id;
+    opt.textContent = pos.label;
+    sel.appendChild(opt);
+  });
+  sel.value = PLAYERS[id].positions[0].id;
+
+  updateAll(); // updateAll resolves benchmarkNs per evalGroup and refreshes n-* values
+}
+
+// ══════════════════════════════════════════════════════════════
+// POSITION FILTER
+// ══════════════════════════════════════════════════════════════
+
+function handlePositionFilter() {
+  const p = PLAYERS[currentPlayer];
+  const oldCtx = getEvalContext();
+  const newId = document.getElementById('positionFilter').value;
+  const newCtx = p.positions.find(x => x.id === newId) || p.positions[0];
+  // When the eval group changes (e.g. Winger → Central Mid), reset to best-match profile
+  if (newCtx.evalGroup !== oldCtx.evalGroup) currentProfileId = null;
+  currentPosId = newId;
+  updateAll();
+}
+
+function getEvalContext() {
+  const p = PLAYERS[currentPlayer];
+  return p.positions.find(x => x.id === currentPosId) || p.positions[0];
+}
+
+// ══════════════════════════════════════════════════════════════
+// UPDATE ALL
+// ══════════════════════════════════════════════════════════════
+
+function slugify(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/,'').replace(/^-+/,'');
+}
+
+function updateAll() {
+  const p = PLAYERS[currentPlayer];
+  const ctx = getEvalContext();
+
+  // Resolve active profile (null = best match = index 0)
+  const profiles = p.profileMatches[ctx.evalGroup] || [];
+  const activeProfile = (currentProfileId && profiles.find(x => slugify(x.name) === currentProfileId))
+    || profiles[0] || null;
+  const profSlug = activeProfile ? slugify(activeProfile.name) : null;
+
+  // Use profile-specific metrics if available, else fall back to evalGroup metrics
+  const groupMetrics = p.metrics[ctx.evalGroup] || p.metrics[Object.keys(p.metrics)[0]];
+  const metrics = (profSlug && p.profileMetrics && p.profileMetrics[profSlug])
+    ? p.profileMetrics[profSlug]
+    : groupMetrics;
+
+  // ── Update profile selector in radar header ──
+  if (activeProfile) {
+    document.getElementById('profileSelectorName').textContent = activeProfile.name;
+    document.getElementById('profileSelectorPct').textContent = activeProfile.pct + '%';
+  }
+
+  // ── Build profile dropdown items ──
+  const itemsEl = document.getElementById('profileDropdownItems');
+  itemsEl.innerHTML = '';
+  profiles.slice(0, 4).forEach((prof, i) => {
+    const slug = slugify(prof.name);
+    const isActive = profSlug === slug || (!currentProfileId && i === 0);
+    const div = document.createElement('div');
+    div.className = 'profile-dropdown-item' + (isActive ? ' active' : '');
+    div.onclick = (e) => { e.stopPropagation(); selectProfile(slug); };
+    div.innerHTML =
+      `<span class="profile-item-rank">${i + 1}</span>` +
+      `<span class="profile-item-name">${prof.name}</span>` +
+      `<div class="profile-item-bar-wrap"><div class="profile-item-bar" style="width:${prof.pct}%"></div></div>` +
+      `<span class="profile-item-pct">${prof.pct}%</span>`;
+    itemsEl.appendChild(div);
+  });
+
+  // ── Build Competition & Season chips ──
+  buildCompSeasonChips(p);
+
+  const typeLabel = ctx.evalType === 'primary'
+    ? `Primary position · ${ctx.evalMins.toLocaleString()} mins`
+    : `Position filter applied · ${ctx.evalMins.toLocaleString()} mins`;
+  document.getElementById('evalContextValue').textContent = ctx.evalLabel;
+  document.getElementById('evalContextSub').textContent = typeLabel;
+
+  document.getElementById('ctxMins').textContent = ctx.evalMins.toLocaleString();
+  document.getElementById('ctxComp').textContent = p.competition.split(' + ')
+    .map(c => c.replace('Premier League','PL')).join(' + ');
+  document.getElementById('ctxSeason').textContent = p.season;
+
+  const warnEl = document.getElementById('warnMinutes');
+  if (p.lowMinsWarning && ctx.evalType === 'filter' && ctx.evalMins < 500) {
+    document.getElementById('warnMinutesText').innerHTML = p.lowMinsWarning;
+    warnEl.style.display = 'flex';
+  } else if (ctx.evalMins < 300) {
+    document.getElementById('warnMinutesText').innerHTML =
+      `${p.name.split(' ')[1]} has played <strong>${ctx.evalMins} mins</strong> in the selected period. Stats may be volatile.`;
+    warnEl.style.display = 'flex';
+  } else {
+    warnEl.style.display = 'none';
+  }
+
+  // Refresh benchmark modal sample sizes for the current eval group
+  const ns = resolveNs(p, ctx.evalGroup);
+  document.getElementById('n-professional').textContent = ns.professional;
+  document.getElementById('n-league').textContent = ns.league;
+  document.getElementById('n-elite').textContent = ns.elite;
+
+  const benchmarkConfigs = getBenchmarkConfigs(ctx.evalLabel);
+  const cfg = appliedBenchmark === 'custom'
+    ? { name: 'Custom cohort', detail: document.getElementById('sidebarBenchmarkDetail').textContent }
+    : benchmarkConfigs[appliedBenchmark];
+  document.getElementById('sidebarBenchmarkName').textContent = cfg.name;
+  document.getElementById('sidebarBenchmarkDetail').textContent = cfg.detail;
+  document.getElementById('ctxName').textContent = cfg.name;
+  document.getElementById('ctxDetail').textContent = cfg.detail;
+
+  drawRadar(metrics);
+  buildTable(metrics);
+  buildProfileMatch(ctx, p);
+}
+
+// ── Build combined Competition & Season chips ──
+// Each chip represents a comp+season combination the player's data covers.
+// Main competition gets all seasons; supplementary cups get current season only.
+function buildCompSeasonChips(p) {
+  const container = document.getElementById('compSeasonChips');
+  if (!container) return;
+  container.innerHTML = '';
+  const compAbbr = {
+    'Premier League': 'PL', 'FA Cup': 'FA Cup', 'EFL Cup': 'EFL Cup',
+    'Champions League': 'UCL', 'Europa League': 'UEL', 'Conference League': 'UECL',
+  };
+  const comps   = p.competition.split(' + ');
+  const seasons = p.season.split(', ');
+  comps.forEach((comp, ci) => {
+    const abbr = compAbbr[comp.trim()] || comp.trim();
+    // Cups only get the current (most recent) season to avoid clutter
+    const seasonList = ci === 0 ? seasons : [seasons[0]];
+    seasonList.forEach(s => {
+      const chip = document.createElement('div');
+      chip.className = 'cs-chip';
+      chip.innerHTML = `${abbr} ${s} <span class="cs-x">✕</span>`;
+      container.appendChild(chip);
+    });
+  });
+  const add = document.createElement('span');
+  add.className = 'cs-add';
+  add.textContent = '+ Add';
+  container.appendChild(add);
+}
+
+// ── Collapsible filter section toggle ──
+function toggleFilterSection(bodyId, headEl) {
+  const body  = document.getElementById(bodyId);
+  const caret = headEl.querySelector('.filter-section-caret');
+  const isCollapsed = body.classList.toggle('collapsed');
+  if (caret) caret.classList.toggle('collapsed', isCollapsed);
+}
+
+// resolveNs: normalises benchmarkNs for both flat (van Dijk) and group-keyed (Semenyo) shapes.
+// Always returns a flat { professional, league, elite } object for the current evalGroup.
+function resolveNs(p, evalGroup) {
+  const ns = p.benchmarkNs;
+  if (!ns) return { professional: '—', league: '—', elite: '—' };
+  // If the top-level keys are eval-group names (not benchmark tier names), it's nested
+  if (typeof ns.professional === 'undefined') {
+    return ns[evalGroup] || ns[Object.keys(ns)[0]] || { professional: '—', league: '—', elite: '—' };
+  }
+  return ns; // flat shape — same for all groups (van Dijk)
+}
+
+function getBenchmarkConfigs(posLabel) {
+  const pl = posLabel + 's';
+  const p = PLAYERS[currentPlayer];
+  return {
+    professional: { name: 'Professional Football', detail: `Top 35 comps · 2023/24 + 2024/25 · ${pl}` },
+    league:       { name: "Player's League",        detail: `${p.competition.split(' + ')[0]} · 2024/25 + 2025/26 · ${pl}` },
+    elite:        { name: 'Continental Elite',      detail: `Top 5 European leagues · 2024/25 + 2025/26 · ${pl}` },
+  };
+}
+
+// ══════════════════════════════════════════════════════════════
+// RADAR
+// ══════════════════════════════════════════════════════════════
+
+function drawRadar(metrics) {
+  const svg = document.getElementById('radarSVG');
+  svg.innerHTML = '';
+  const cx = 210, cy = 190, maxR = 148;
+  const rings = [20,40,60,80,100];
+  const toRad = d => d * Math.PI / 180;
+  const pt = (r, a) => ({ x: cx + r * Math.cos(toRad(a)), y: cy + r * Math.sin(toRad(a)) });
+
+  rings.forEach(r => {
+    const radius = (r/100)*maxR;
+    let el = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    el.setAttribute('cx',cx); el.setAttribute('cy',cy); el.setAttribute('r',radius);
+    el.setAttribute('fill', r===100 ? '#f8fafc' : 'none');
+    el.setAttribute('stroke','#EDF2F7'); el.setAttribute('stroke-width','1');
+    svg.appendChild(el);
+    if (r < 100) {
+      let t = document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x',cx+3); t.setAttribute('y',cy-radius+4);
+      t.setAttribute('font-size','9'); t.setAttribute('fill','#CBD5E0');
+      t.textContent = r; svg.appendChild(t);
+    }
+  });
+
+  metrics.forEach(m => {
+    const edge = pt(maxR, m.angle);
+    let line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',cx); line.setAttribute('y1',cy);
+    line.setAttribute('x2',edge.x); line.setAttribute('y2',edge.y);
+    line.setAttribute('stroke','#EDF2F7'); line.setAttribute('stroke-width','1');
+    svg.appendChild(line);
+  });
+
+  const polyPts = metrics.map(m => { const r=(m.pct/100)*maxR; return pt(r,m.angle); });
+  let poly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+  poly.setAttribute('points', polyPts.map(p=>`${p.x},${p.y}`).join(' '));
+  poly.setAttribute('fill','rgba(192,0,0,0.5)');
+  poly.setAttribute('stroke','#c00000'); poly.setAttribute('stroke-width','1.5');
+  svg.appendChild(poly);
+
+  polyPts.forEach(p => {
+    let c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',p.x); c.setAttribute('cy',p.y);
+    c.setAttribute('r','3.5'); c.setAttribute('fill','#c00000');
+    svg.appendChild(c);
+  });
+
+  metrics.forEach(m => {
+    const labelR = maxR + 22;
+    const p = pt(labelR, m.angle);
+    let text = document.createElementNS('http://www.w3.org/2000/svg','text');
+    text.setAttribute('x',p.x); text.setAttribute('y',p.y);
+    text.setAttribute('text-anchor','middle'); text.setAttribute('dominant-baseline','middle');
+    text.setAttribute('font-size','10'); text.setAttribute('fill','#718096');
+    text.setAttribute('font-family','Inter,-apple-system,sans-serif');
+    const words = m.name.split(' ');
+    if (words.length === 1 || m.name.length < 9) {
+      text.textContent = m.name;
+    } else {
+      const mid = Math.ceil(words.length/2);
+      let t1 = document.createElementNS('http://www.w3.org/2000/svg','tspan');
+      let t2 = document.createElementNS('http://www.w3.org/2000/svg','tspan');
+      t1.setAttribute('x',p.x); t1.setAttribute('dy','-7');
+      t2.setAttribute('x',p.x); t2.setAttribute('dy','13');
+      t1.textContent = words.slice(0,mid).join(' ');
+      t2.textContent = words.slice(mid).join(' ');
+      text.appendChild(t1); text.appendChild(t2);
+    }
+    svg.appendChild(text);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// TABLE
+// ══════════════════════════════════════════════════════════════
+
+function buildTable(metrics) {
+  const body = document.getElementById('tableBody');
+  body.innerHTML = '';
+  metrics.forEach(m => {
+    const isGreen = m.pct >= 66;
+    const row = document.createElement('div');
+    row.className = 'table-row';
+    row.innerHTML = `
+      <div class="col-metric"><a href="#">${m.name}</a></div>
+      <div class="col-val">${m.value}</div>
+      <div class="col-pct">
+        <span class="pct-num" style="color:${isGreen?'#16a34a':'#2b6cb0'}">${m.pct}</span>
+        <span class="pct-dot ${isGreen?'dot-green':'dot-blue'}"></span>
+      </div>`;
+    body.appendChild(row);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// PROFILE MATCH
+// ══════════════════════════════════════════════════════════════
+
+function buildProfileMatch(ctx, p) {
+  const pmEvalValue  = document.getElementById('pmEvalValue');
+  const pmEvalBadge  = document.getElementById('pmEvalBadge');
+  const pmEvalNote   = document.getElementById('pmEvalNote');
+  const pmSecondary  = document.getElementById('pmSecondary');
+  const pmList       = document.getElementById('pmList');
+
+  pmEvalValue.textContent = ctx.evalLabel;
+  pmEvalBadge.textContent = ctx.evalType === 'primary' ? 'primary position' : 'position filter applied';
+  pmEvalBadge.style.background = ctx.evalType === 'primary' ? '#dbeafe' : '#fef3c7';
+  pmEvalBadge.style.color = ctx.evalType === 'primary' ? '#1e40af' : '#92400e';
+  pmEvalNote.textContent = `Showing templates in the ${ctx.evalLabel} role group. Change position filter to see other templates.`;
+
+  if (p.secondaryPosition && currentPosId === 'all') {
+    const sec = p.secondaryPosition;
+    pmSecondary.style.display = 'block';
+    pmSecondary.innerHTML = `<strong>${p.name.split(' ')[1]} also played ${sec.mins} mins as ${sec.label}</strong> (${sec.pct}% of total minutes). <a onclick="switchToPosition('${sec.id}')">View ${sec.label} profiles →</a>`;
+  } else {
+    pmSecondary.style.display = 'none';
+  }
+
+  const templates = p.profileMatches[ctx.evalGroup] || [];
+  pmList.innerHTML = '';
+
+  if (templates.length === 0) {
+    pmList.innerHTML = '<div class="pm-empty">No profile templates available for this position group yet.</div>';
+    return;
+  }
+
+  templates.forEach(t => {
+    const card = document.createElement('div');
+    card.className = 'pm-card' + (t.top ? ' top' : '');
+    card.innerHTML = `
+      <div class="pm-card-top-row">
+        <div>
+          <div class="pm-card-name">${t.name}</div>
+          ${t.top ? '<div class="pm-card-badge">Best match</div>' : ''}
+        </div>
+        <div class="pm-card-pct">${t.pct}%</div>
+      </div>
+      <div class="pm-bar-track">
+        <div class="pm-bar-fill" style="width:${t.pct}%;"></div>
+      </div>
+      <div class="pm-drivers">
+        ${t.drivers.map(d => `<span class="pm-driver high">${d}</span>`).join('')}
+        ${t.low.map(d => `<span class="pm-driver low">${d}</span>`).join('')}
+      </div>`;
+    pmList.appendChild(card);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// PROFILE DROPDOWN
+// ══════════════════════════════════════════════════════════════
+
+function toggleProfileDropdown(e) {
+  e.stopPropagation();
+  const sel = document.getElementById('profileSelector');
+  const dd  = document.getElementById('profileDropdown');
+  const isOpen = sel.classList.contains('open');
+  sel.classList.toggle('open', !isOpen);
+  dd.classList.toggle('open', !isOpen);
+}
+
+function closeProfileDropdown() {
+  document.getElementById('profileSelector').classList.remove('open');
+  document.getElementById('profileDropdown').classList.remove('open');
+}
+
+function selectProfile(slug) {
+  currentProfileId = slug;
+  closeProfileDropdown();
+  updateAll();
+}
+
+function switchToPosition(posId) {
+  document.getElementById('positionFilter').value = posId;
+  currentPosId = posId;
+  updateAll();
+  switchTab('pm');
+}
+
+function focusPositionFilter() {
+  document.getElementById('positionFilter').focus();
+  switchTab('pct');
+}
+
+// ══════════════════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════════════════
+
+function switchTab(id) {
+  activeTab = id;
+  document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tabBtn-'+id).classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════
+// BENCHMARK MODAL
+// ══════════════════════════════════════════════════════════════
+
+function openBenchmarkModal() { document.getElementById('benchmarkOverlay').classList.add('open'); }
+function closeBenchmarkModal() { document.getElementById('benchmarkOverlay').classList.remove('open'); }
+function handleBMOverlayClick(e) { if (e.target === document.getElementById('benchmarkOverlay')) closeBenchmarkModal(); }
+
+function selectCard(id) {
+  ['professional','league','elite','custom'].forEach(k => document.getElementById('card-'+k).classList.remove('selected'));
+  document.getElementById('card-'+id).classList.add('selected');
+  activeBenchmark = id;
+  document.getElementById('customPanel').classList.toggle('open', id === 'custom');
+  updateSampleSize();
+}
+
+const compSizes = { epl:68, laliga:72, bundesliga:62, seriea:70, ligue1:64, eredivisie:48, mls:110, spl:55, championship:90, jupiler:44 };
+const seasonMult = { s2526:0.35, s2425:1.0, s2324:0.9, s2223:0.85 };
+
+function toggleComp(el) { el.classList.toggle('active'); updateCustomN(); }
+function updateCustomN() { updateSampleSize(); checkSeasonWarning(); }
+
+function checkSeasonWarning() {
+  const only2526 = document.getElementById('s2526').checked &&
+                   !document.getElementById('s2425').checked &&
+                   !document.getElementById('s2324').checked &&
+                   !document.getElementById('s2223').checked;
+  document.getElementById('seasonWarn').classList.toggle('show', only2526);
+}
+
+function getCustomN() {
+  let base = 0;
+  document.querySelectorAll('.comp-chip.active').forEach(c => { base += (compSizes[c.dataset.comp] || 50); });
+  let sf = 0;
+  ['s2526','s2425','s2324','s2223'].forEach(s => { if (document.getElementById(s).checked) sf += seasonMult[s]; });
+  if (sf === 0) return 0;
+  return Math.round(base * Math.min(sf, 1.4));
+}
+
+function updateSampleSize() {
+  let n, nText;
+  const p = PLAYERS[currentPlayer];
+  const ctx = getEvalContext();
+  const ns = resolveNs(p, ctx.evalGroup);
+  if (activeBenchmark === 'professional') { n=2400; nText=ns.professional; }
+  else if (activeBenchmark === 'elite')   { n=340;  nText=ns.elite; }
+  else if (activeBenchmark === 'league')  { n=68;   nText=ns.league; }
+  else {
+    n = getCustomN(); nText = n===0 ? '0' : `~${n}`;
+    document.getElementById('customN').textContent = nText + ' players';
+  }
+  const el  = document.getElementById('sampleN');
+  const ind = document.getElementById('sampleIndicator');
+  const sw  = document.getElementById('smallNWarn');
+  el.textContent = nText;
+  if (n >= 200) { el.className='sample-n good'; ind.textContent='● Reliable'; ind.className='sample-indicator good'; sw.style.display='none'; }
+  else if (n >= 80) { el.className='sample-n warn'; ind.textContent='● Moderate'; ind.className='sample-indicator warn'; sw.style.display='none'; }
+  else { el.className='sample-n bad'; ind.textContent='● Small — use with caution'; ind.className='sample-indicator bad'; sw.style.display='flex'; }
+}
+
+function applyBenchmark() {
+  appliedBenchmark = activeBenchmark;
+  const ctx = getEvalContext();
+  const cfgs = getBenchmarkConfigs(ctx.evalLabel);
+  let cfg;
+  if (activeBenchmark === 'custom') {
+    const comps = [...document.querySelectorAll('.comp-chip.active')].map(c=>c.textContent).join(', ');
+    const seasons = [['s2526','2025/26'],['s2425','2024/25'],['s2324','2023/24'],['s2223','2022/23']]
+      .filter(([id])=>document.getElementById(id).checked).map(([,l])=>l).join(', ');
+    cfg = { name: 'Custom cohort', detail: `${comps||'No comps'} · ${seasons||'No seasons'} · ${ctx.evalLabel}s` };
+  } else {
+    cfg = cfgs[activeBenchmark];
+  }
+  document.getElementById('sidebarBenchmarkName').textContent = cfg.name;
+  document.getElementById('sidebarBenchmarkDetail').textContent = cfg.detail;
+  document.getElementById('ctxName').textContent = cfg.name;
+  document.getElementById('ctxDetail').textContent = cfg.detail;
+  closeBenchmarkModal();
+}
+
+function handleMatchFilter() {
+  const val = document.getElementById('matchFilter').value;
+  document.getElementById('warnMismatch').style.display = val === 'all' ? 'none' : 'flex';
+}
+
+// ══════════════════════════════════════════════════════════════
+// TEMPLATE MODAL
+// ══════════════════════════════════════════════════════════════
+
+function openTemplateModal() { buildOldPosGrid(); buildRoleGrid(); document.getElementById('templateOverlay').classList.add('open'); }
+function closeTemplateModal() { document.getElementById('templateOverlay').classList.remove('open'); }
+function handleTplOverlayClick(e) { if (e.target===document.getElementById('templateOverlay')) closeTemplateModal(); }
+
+function buildOldPosGrid() {
+  const grid = document.getElementById('oldPosGrid');
+  grid.innerHTML = '';
+  OLD_POSITIONS.forEach(pos => {
+    const btn = document.createElement('div');
+    const isSel = OLD_SEL.includes(pos);
+    const isWarn = OLD_WARN.includes(pos);
+    btn.className = 'pos-btn-mini' + (isWarn ? ' sel-warn' : isSel ? ' sel' : '');
+    btn.textContent = pos;
+    btn.title = isWarn ? 'System secretly uses this as benchmark' : isSel ? 'Selected' : '';
+    grid.appendChild(btn);
+  });
+}
+
+function buildRoleGrid() {
+  const grid = document.getElementById('roleGrid');
+  grid.innerHTML = '';
+  ROLE_GROUPS.forEach(rg => {
+    const btn = document.createElement('div');
+    btn.className = 'role-btn' + (rg.sel ? ' sel' : '');
+    btn.innerHTML = `${rg.label}<span class="role-sub">${rg.sub}</span>`;
+    btn.onclick = () => {
+      document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('sel'));
+      btn.classList.add('sel');
+    };
+    grid.appendChild(btn);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// EVAL TOOLTIP
+// ══════════════════════════════════════════════════════════════
+
+function showEvalTooltip() { document.getElementById('evalTooltip').classList.add('open'); }
+function hideEvalTooltip() { document.getElementById('evalTooltip').classList.remove('open'); }
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+
+switchPlayer('semenyo');
+updateSampleSize();
+</script>
+
+
+
+<script>
+/* ═══ Page switcher ═══════════════════════════════════════════════════════ */
+function switchPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.page-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  const idx = id === 'scout' ? 0 : id === 'rankings' ? 1 : 2;
+  document.querySelectorAll('.page-btn')[idx].classList.add('active');
+}
+
+/* ═══ Filter section toggle ═══════════════════════════════════════════════ */
+function toggleSection(bodyId, headEl) {
+  const body  = document.getElementById(bodyId);
+  const caret = headEl.querySelector('.filter-section-caret');
+  const c = body.classList.toggle('collapsed');
+  if (caret) caret.classList.toggle('collapsed', c);
+}
+
+/* ═══ Scout: Role group data ══════════════════════════════════════════════ */
+const ROLE_POSITIONS = {
+  winger:   [
+    { id:'lw',  label:'Left Winger',  abbr:'LW',  mins:'912',  checked:true  },
+    { id:'rw',  label:'Right Winger', abbr:'RW',  mins:'831',  checked:true  },
+    { id:'lm',  label:'Left Mid',     abbr:'LM',  mins:'488',  checked:true  },
+    { id:'rm',  label:'Right Mid',    abbr:'RM',  mins:'312',  checked:true  },
+  ],
+  attacker: [
+    { id:'cf',  label:'Centre Forward', abbr:'CF', mins:'1820', checked:true },
+    { id:'ss',  label:'Second Striker', abbr:'SS', mins:'640',  checked:true },
+    { id:'af',  label:'Advanced Fwd',   abbr:'AF', mins:'388',  checked:true },
+  ],
+  amc: [
+    { id:'cam', label:'Central AM', abbr:'CAM', mins:'1280', checked:true },
+    { id:'ram', label:'Right AM',   abbr:'RAM', mins:'580',  checked:true },
+    { id:'lam', label:'Left AM',    abbr:'LAM', mins:'440',  checked:true },
+  ],
+  cm: [
+    { id:'cm',  label:'Central Mid',  abbr:'CM',  mins:'2100', checked:true },
+    { id:'dm',  label:'Def. Mid',     abbr:'DM',  mins:'1600', checked:true },
+    { id:'box', label:'Box-to-Box',   abbr:'B2B', mins:'820',  checked:true },
+  ],
+  fb: [
+    { id:'lb',  label:'Left Back',   abbr:'LB',  mins:'1420', checked:true },
+    { id:'rb',  label:'Right Back',  abbr:'RB',  mins:'1380', checked:true },
+    { id:'lwb', label:'Left Wing Back', abbr:'LWB', mins:'580', checked:true },
+    { id:'rwb', label:'Right Wing Back', abbr:'RWB', mins:'420', checked:true },
+  ],
+  cb: [
+    { id:'cb',  label:'Centre Back', abbr:'CB',  mins:'2800', checked:true },
+    { id:'lcb', label:'Left CB',     abbr:'LCB', mins:'640',  checked:true },
+    { id:'rcb', label:'Right CB',    abbr:'RCB', mins:'580',  checked:true },
+  ],
+  gk: [
+    { id:'gk',  label:'Goalkeeper',  abbr:'GK',  mins:'3420', checked:true },
+  ],
+};
+
+let currentRole = 'winger';
+
+function selectRole(role, el) {
+  currentRole = role;
+  document.querySelectorAll('.role-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  // Close refine panel
+  document.getElementById('refinePanel').classList.remove('open');
+  document.getElementById('refineCaret').classList.remove('open');
+  buildRefineList();
+  updateScoutTable();
+}
+
+/* ═══ Scout: Refine positions ════════════════════════════════════════════ */
+let refineOpen = false;
+
+function toggleRefine() {
+  refineOpen = !refineOpen;
+  document.getElementById('refinePanel').classList.toggle('open', refineOpen);
+  document.getElementById('refineCaret').classList.toggle('open', refineOpen);
+}
+
+function buildRefineList() {
+  const positions = ROLE_POSITIONS[currentRole] || [];
+  const container = document.getElementById('refinePosListScout');
+  container.innerHTML = '';
+  positions.forEach(pos => {
+    const row = document.createElement('div');
+    row.className = 'refine-pos-item';
+    row.innerHTML = `
+      <div class="refine-pos-left">
+        <input type="checkbox" id="refine-${pos.id}" ${pos.checked ? 'checked' : ''}
+               onchange="updateRefineCount()">
+        <label for="refine-${pos.id}">
+          <span class="refine-pos-label">${pos.label}</span>
+          <span class="refine-pos-abbr"> (${pos.abbr})</span>
+        </label>
+      </div>
+      <span class="refine-pos-mins">${parseInt(pos.mins).toLocaleString()} mins</span>
+    `;
+    container.appendChild(row);
+  });
+  updateRefineCount();
+}
+
+function updateRefineCount() {
+  const positions = ROLE_POSITIONS[currentRole] || [];
+  const total = positions.length;
+  let checked = 0;
+  positions.forEach(pos => {
+    const cb = document.getElementById('refine-'+pos.id);
+    if (cb && cb.checked) checked++;
+  });
+  const countEl = document.getElementById('refineActiveCount');
+  if (checked < total) {
+    countEl.textContent = `(${checked}/${total})`;
+  } else {
+    countEl.textContent = '';
+  }
+  updateScoutTable();
+}
+
+/* ═══ Scout: Player data ══════════════════════════════════════════════════ */
+const SCOUT_PLAYERS = {
+  winger: [
+    { name:'Antoine Semenyo',  team:'Bournemouth',   age:24, mins:1549, pc:5.8, xg:0.31, obv:0.14, match:92, focus:true  },
+    { name:'Jarrod Bowen',     team:'West Ham',       age:28, mins:2210, pc:6.4, xg:0.38, obv:0.19, match:88 },
+    { name:'Pedro Neto',       team:'Chelsea',        age:24, mins:1820, pc:7.1, xg:0.29, obv:0.21, match:85 },
+    { name:'Bryan Mbeumo',     team:'Brentford',      age:25, mins:2380, pc:4.2, xg:0.44, obv:0.18, match:83 },
+    { name:'Leif Davis',       team:'Ipswich',        age:24, mins:2180, pc:3.8, xg:0.12, obv:0.09, match:78 },
+    { name:'Kaoru Mitoma',     team:'Brighton',       age:27, mins:1940, pc:6.9, xg:0.27, obv:0.17, match:77 },
+    { name:'Michael Olise',    team:'Man City',       age:23, mins:1680, pc:5.1, xg:0.36, obv:0.22, match:76 },
+    { name:'Wilfried Gnonto',  team:'Leeds',          age:21, mins:1440, pc:5.4, xg:0.22, obv:0.11, match:74 },
+  ],
+  attacker: [
+    { name:'Erling Haaland',   team:'Man City',       age:24, mins:2650, pc:2.1, xg:0.88, obv:0.28, match:95 },
+    { name:'Ollie Watkins',    team:'Aston Villa',    age:29, mins:2380, pc:3.4, xg:0.65, obv:0.22, match:89 },
+    { name:'Dominic Solanke',  team:'Spurs',          age:27, mins:2100, pc:2.8, xg:0.42, obv:0.15, match:82 },
+  ],
+  cb: [
+    { name:'Virgil van Dijk',  team:'Liverpool',      age:33, mins:2890, pc:0.9, xg:0.04, obv:0.08, match:97 },
+    { name:'William Saliba',   team:'Arsenal',        age:23, mins:2760, pc:1.2, xg:0.06, obv:0.11, match:94 },
+    { name:'Micky van de Ven', team:'Spurs',          age:23, mins:2180, pc:2.1, xg:0.08, obv:0.13, match:88 },
+  ],
+  cm: [
+    { name:'Declan Rice',      team:'Arsenal',        age:26, mins:2920, pc:2.8, xg:0.12, obv:0.18, match:91 },
+    { name:'Rodri',            team:'Man City',       age:28, mins:2640, pc:1.9, xg:0.09, obv:0.16, match:88 },
+  ],
+  fb: [
+    { name:'Trent Alexander-Arnold', team:'Liverpool', age:26, mins:2410, pc:3.1, xg:0.08, obv:0.14, match:90 },
+    { name:'Reece James',      team:'Chelsea',        age:25, mins:1640, pc:2.8, xg:0.07, obv:0.12, match:85 },
+  ],
+  amc: [
+    { name:'Phil Foden',       team:'Man City',       age:24, mins:2580, pc:4.8, xg:0.29, obv:0.23, match:93 },
+    { name:'James Maddison',   team:'Spurs',          age:28, mins:2100, pc:3.6, xg:0.22, obv:0.17, match:87 },
+  ],
+  gk: [
+    { name:'Alisson Becker',   team:'Liverpool',      age:32, mins:2880, pc:0.1, xg:0.00, obv:0.06, match:96 },
+    { name:'David Raya',       team:'Arsenal',        age:29, mins:2760, pc:0.1, xg:0.00, obv:0.05, match:93 },
+  ],
+};
+
+const maxStats = { pc: 8.0, xg: 1.0, obv: 0.35 };
+
+function updateScoutTable() {
+  const players = (SCOUT_PLAYERS[currentRole] || []);
+  const tbody   = document.getElementById('scoutTableBody');
+  const countEl = document.getElementById('scoutResultCount');
+
+  // Filter by selected refine positions — just affects display here
+  const posData = ROLE_POSITIONS[currentRole] || [];
+  const activeAbbrs = new Set(
+    posData.filter(p => {
+      const cb = document.getElementById('refine-'+p.id);
+      return !cb || cb.checked;
+    }).map(p => p.abbr)
+  );
+
+  // Build role label from active positions
+  const roleLabel = posData.length > 0
+    ? posData.filter(p => { const cb = document.getElementById('refine-'+p.id); return !cb || cb.checked; })
+             .map(p => p.abbr).join(' · ') || '—'
+    : '—';
+
+  tbody.innerHTML = '';
+  players.forEach(pl => {
+    const tr = document.createElement('tr');
+    if (pl.focus) tr.classList.add('highlight');
+    const pcPct = Math.round((pl.pc / maxStats.pc) * 100);
+    const xgPct = Math.round((pl.xg / maxStats.xg) * 100);
+    const obvPct= Math.round((pl.obv/ maxStats.obv)* 100);
+    tr.innerHTML = `
+      <td>
+        <div class="player-cell">
+          <div class="player-cell-avatar ${pl.focus ? 'semenyo' : ''}">${initials(pl.name)}</div>
+          <div>
+            <div class="player-cell-name">${pl.name}</div>
+            <div class="player-cell-team">${pl.team}</div>
+          </div>
+        </div>
+      </td>
+      <td><span class="role-tag">${roleLabel.split(' · ')[0]}</span></td>
+      <td class="num">${pl.age}</td>
+      <td class="num">${pl.mins.toLocaleString()}</td>
+      <td>
+        <div class="stat-bar-cell">
+          <span class="stat-val">${pl.pc}</span>
+          <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pcPct}%"></div></div>
+        </div>
+      </td>
+      <td class="num">${pl.xg.toFixed(2)}</td>
+      <td class="num">${pl.obv.toFixed(2)}</td>
+      <td class="num" style="font-weight:600;color:${pl.match>=90?'var(--green)':pl.match>=80?'var(--blue)':'var(--ink-60)'}">${pl.match}%</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  countEl.textContent = players.length;
+}
+
+function initials(name) {
+  return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+}
+
+/* ═══ Rankings: Strip chart data ═════════════════════════════════════════ */
+// Distribution data for EPL Wingers 25/26 ≥300 mins (n=47)
+// Each metric: { label, unit, semenyo, rank, total, min, max, median, p25, p75, distribution[] }
+const RANK_METRICS = [
+  {
+    label: 'Progressive Carries',
+    unit:  '/90',
+    semenyo: 5.8,
+    rank: 4, total: 47,
+    min: 0.8, max: 9.4, median: 3.6, p25: 2.4, p75: 5.1,
+    named: [ { val: 7.1, name: 'Neto' }, { val: 6.4, name: 'Bowen' }, { val: 4.2, name: 'Mbeumo' } ],
+    dist: [0.8,1.1,1.4,1.6,1.8,1.9,2.1,2.2,2.3,2.4,2.5,2.6,2.7,2.8,2.9,3.0,3.1,3.2,3.3,3.4,3.5,3.6,3.7,3.8,3.9,4.0,4.1,4.2,4.3,4.5,4.6,4.8,5.0,5.1,5.2,5.4,5.5,5.7,5.8,6.0,6.2,6.4,6.6,6.9,7.1,8.2,9.4]
+  },
+  {
+    label: 'xG / 90',
+    unit:  '/90',
+    semenyo: 0.31,
+    rank: 9, total: 47,
+    min: 0.04, max: 0.72, median: 0.21, p25: 0.14, p75: 0.31,
+    named: [ { val: 0.44, name: 'Mbeumo' }, { val: 0.38, name: 'Bowen' }, { val: 0.15, name: 'Davis' } ],
+    dist: [0.04,0.06,0.08,0.09,0.10,0.11,0.12,0.13,0.13,0.14,0.15,0.15,0.16,0.17,0.17,0.18,0.19,0.19,0.20,0.20,0.21,0.21,0.22,0.22,0.23,0.24,0.24,0.25,0.26,0.27,0.27,0.28,0.29,0.30,0.31,0.32,0.33,0.35,0.36,0.38,0.40,0.44,0.48,0.54,0.61,0.68,0.72]
+  },
+  {
+    label: 'Dribble Success %',
+    unit:  '%',
+    semenyo: 58,
+    rank: 6, total: 47,
+    min: 28, max: 82, median: 48, p25: 40, p75: 58,
+    named: [ { val: 72, name: 'Mitoma' }, { val: 66, name: 'Neto' }, { val: 44, name: 'Bowen' } ],
+    dist: [28,30,32,33,34,35,36,37,38,39,40,41,42,42,43,44,44,45,45,46,47,48,48,49,49,50,51,52,52,53,54,54,55,56,57,58,59,60,61,62,63,65,66,68,70,72,82]
+  },
+  {
+    label: 'Chances Created',
+    unit:  '/90',
+    semenyo: 1.8,
+    rank: 7, total: 47,
+    min: 0.4, max: 4.2, median: 1.4, p25: 0.9, p75: 1.9,
+    named: [ { val: 3.1, name: 'Olise' }, { val: 2.4, name: 'Mitoma' }, { val: 1.2, name: 'Gnonto' } ],
+    dist: [0.4,0.5,0.6,0.7,0.8,0.8,0.9,0.9,1.0,1.0,1.0,1.1,1.1,1.2,1.2,1.2,1.3,1.3,1.3,1.4,1.4,1.5,1.5,1.5,1.5,1.6,1.6,1.6,1.7,1.7,1.7,1.8,1.8,1.9,1.9,2.0,2.1,2.1,2.2,2.4,2.6,2.8,3.0,3.1,3.5,3.8,4.2]
+  },
+  {
+    label: 'Press Duel Won %',
+    unit:  '%',
+    semenyo: 52,
+    rank: 8, total: 47,
+    min: 29, max: 74, median: 46, p25: 38, p75: 54,
+    named: [ { val: 68, name: 'Mbeumo' }, { val: 61, name: 'Bowen' }, { val: 37, name: 'Neto' } ],
+    dist: [29,31,32,33,34,35,36,37,38,39,39,40,41,41,42,43,43,44,44,45,45,46,46,47,47,48,48,49,49,50,50,51,51,52,53,53,54,55,55,57,58,59,61,62,64,68,74]
+  },
+  {
+    label: 'OBV / 90',
+    unit:  '/90',
+    semenyo: 0.14,
+    rank: 11, total: 47,
+    min: -0.06, max: 0.32, median: 0.10, p25: 0.06, p75: 0.17,
+    named: [ { val: 0.22, name: 'Olise' }, { val: 0.19, name: 'Neto' }, { val: 0.09, name: 'Gnonto' } ],
+    dist: [-0.06,-0.03,-0.01,0.00,0.01,0.02,0.03,0.04,0.04,0.05,0.05,0.06,0.06,0.07,0.07,0.08,0.08,0.08,0.09,0.09,0.10,0.10,0.10,0.11,0.11,0.11,0.12,0.12,0.13,0.13,0.14,0.14,0.15,0.15,0.16,0.17,0.17,0.18,0.19,0.20,0.21,0.21,0.22,0.24,0.26,0.29,0.32]
+  },
+  {
+    label: 'Crosses / 90',
+    unit:  '/90',
+    semenyo: 2.4,
+    rank: 14, total: 47,
+    min: 0.2, max: 6.8, median: 2.1, p25: 1.2, p75: 3.0,
+    named: [ { val: 5.2, name: 'Davis' }, { val: 3.8, name: 'Bowen' }, { val: 1.4, name: 'Mitoma' } ],
+    dist: [0.2,0.4,0.6,0.7,0.8,0.9,1.0,1.0,1.1,1.2,1.2,1.3,1.4,1.5,1.5,1.6,1.7,1.7,1.8,1.8,1.9,2.0,2.0,2.1,2.1,2.2,2.2,2.3,2.3,2.4,2.5,2.5,2.6,2.7,2.8,2.9,3.0,3.1,3.3,3.5,3.7,3.8,4.0,4.3,5.2,5.9,6.8]
+  },
+  {
+    label: 'Box Touches / 90',
+    unit:  '/90',
+    semenyo: 4.2,
+    rank: 5, total: 47,
+    min: 0.8, max: 8.6, median: 3.0, p25: 2.0, p75: 4.4,
+    named: [ { val: 6.8, name: 'Mbeumo' }, { val: 5.8, name: 'Haaland*' }, { val: 2.8, name: 'Mitoma' } ],
+    dist: [0.8,1.0,1.2,1.4,1.5,1.6,1.7,1.8,1.9,2.0,2.0,2.1,2.2,2.3,2.3,2.4,2.5,2.6,2.7,2.7,2.8,2.9,3.0,3.0,3.1,3.2,3.2,3.3,3.4,3.5,3.6,3.7,3.8,4.0,4.1,4.2,4.3,4.4,4.6,4.8,5.0,5.2,5.6,5.8,6.2,6.8,8.6]
+  },
+];
+
+function buildRankGrid() {
+  const grid = document.getElementById('rankGrid');
+  grid.innerHTML = '';
+
+  RANK_METRICS.forEach(m => {
+    const card = document.createElement('div');
+    card.className = 'strip-card';
+
+    // Rank badge class
+    const rankClass = m.rank <= 5 ? 'top5' : m.rank <= 15 ? 'top15' : 'mid';
+    const pct = Math.round((1 - m.rank / m.total) * 100);
+
+    // Build the strip chart SVG-like HTML
+    const stripHTML = buildStrip(m);
+
+    card.innerHTML = `
+      <div class="strip-card-header">
+        <span class="strip-card-metric">${m.label}</span>
+        <span class="strip-card-rank ${rankClass}">${ordinal(m.rank)} of ${m.total} · Top ${100 - pct + 1}%</span>
+      </div>
+      ${stripHTML}
+      <div class="strip-card-vals">
+        <span class="strip-focus-val">${formatVal(m.semenyo, m.unit)}</span>
+        <span class="strip-focus-unit">${m.unit}</span>
+        <span class="strip-focus-sep">·</span>
+        <span class="strip-median-label">Median:</span>
+        <span class="strip-median-val">${formatVal(m.median, m.unit)} ${m.unit}</span>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function buildStrip(m) {
+  const range = m.max - m.min;
+
+  // Position each dot as a percentage
+  function pctOf(val) {
+    return Math.max(2, Math.min(98, ((val - m.min) / range) * 100));
+  }
+
+  // All distribution dots (excluding named + semenyo)
+  const namedVals = new Set(m.named.map(n => n.val));
+  const regularDots = m.dist.filter(v => v !== m.semenyo && !namedVals.has(v));
+
+  let dotsHTML = '';
+
+  // Regular dots
+  regularDots.forEach(v => {
+    dotsHTML += `<div class="player-dot" style="left:${pctOf(v)}%"></div>`;
+  });
+
+  // Named reference players (below label)
+  m.named.forEach(n => {
+    const p = pctOf(n.val);
+    dotsHTML += `
+      <div class="player-dot named" style="left:${p}%">
+        <div class="dot-label below" style="left:50%">${n.name}</div>
+      </div>`;
+  });
+
+  // Semenyo (highlighted, label above)
+  const sp = pctOf(m.semenyo);
+  dotsHTML += `
+    <div class="player-dot focus" style="left:${sp}%">
+      <div class="dot-label" style="left:50%">Semenyo</div>
+    </div>`;
+
+  // Median line
+  const mp = pctOf(m.median);
+
+  return `
+    <div class="strip-chart">
+      <div class="strip-track">
+        <div class="quartile-band q1"></div>
+        <div class="quartile-band q4"></div>
+        ${dotsHTML}
+        <!-- Median tick -->
+        <div style="position:absolute;left:${mp}%;top:0;width:1.5px;height:100%;background:var(--ink-40);opacity:0.4"></div>
+      </div>
+      <div class="strip-axis">
+        <span>${formatVal(m.min, m.unit)}</span>
+        <span style="position:absolute;left:${mp}%;transform:translateX(-50%);color:var(--ink-40);font-size:9px">med</span>
+        <span>${formatVal(m.max, m.unit)}</span>
+      </div>
+    </div>
+  `;
+}
+
+function formatVal(v, unit) {
+  if (unit === '%') return Math.round(v) + '%';
+  if (v === Math.round(v)) return v.toFixed(1);
+  if (Math.abs(v) < 0.1) return v.toFixed(2);
+  return v.toFixed(1);
+}
+
+function ordinal(n) {
+  const s = ['th','st','nd','rd'];
+  const v = n % 100;
+  return n + (s[(v-20)%10] || s[v] || s[0]);
+}
+
+/* ═══ Role context switcher (Rankings) ═══════════════════════════════════ */
+const SECONDARY_CTX = {
+  cm: {
+    title: 'Semenyo evaluated as a Central Mid — 147 mins (8% of season)',
+    intro: 'Switching context loads the Central Mid template and benchmark pool. Every metric, every percentile, and every comparison is now drawn from Central Midfielders only — a completely separate, clean evaluation. This is not a blend.',
+    stats: [
+      { metric: 'Progressive Passes /90', val: '3.1', rank: '31st of 38', cls: 'ctx-rank-avg' },
+      { metric: 'Pressure Regains /90',   val: '2.8', rank: '28th of 38', cls: 'ctx-rank-avg' },
+      { metric: 'Ball Recoveries /90',    val: '4.2', rank: '19th of 38', cls: 'ctx-rank-ok'  },
+      { metric: 'OBV Pass /90',           val: '0.06', rank: '33rd of 38', cls: 'ctx-rank-avg' },
+    ],
+    primaryStats: [
+      { metric: 'Progressive Carries /90', val: '5.8', rank: '4th of 47',  cls: 'ctx-rank-good' },
+      { metric: 'Dribble Success %',        val: '58%', rank: '6th of 47',  cls: 'ctx-rank-good' },
+      { metric: 'xG /90',                   val: '0.31', rank: '9th of 47', cls: 'ctx-rank-ok'   },
+      { metric: 'OBV /90',                  val: '0.14', rank: '11th of 47', cls: 'ctx-rank-ok'  },
+    ],
+    insight: '<strong>The comparison makes the versatility story clear.</strong> As a Winger Semenyo is a top-10% performer. As a Central Mid his 147 minutes produce low-end metrics for that role. This is actionable: sign him as a wide threat, not as a CM option. One blended benchmark would have obscured both stories.',
+    pool: 'PL 25/26 · Central Mids · 38 players',
+    template: 'Central Mid template (progressive passing, press regains, recoveries)',
+  },
+  forward: {
+    title: 'Semenyo evaluated as a Forward — 52 mins (3% of season)',
+    intro: 'Only 52 minutes in this role — below the usual 180-min threshold for meaningful evaluation. The system would flag this as insufficient data rather than surface misleading percentiles from a tiny sample.',
+    stats: [],
+    primaryStats: [],
+    insight: '<strong>Small samples protect the scout.</strong> If the system blended these 52 minutes into a combined benchmark, they would silently drag down his striking metrics without any warning. Instead, the system surfaces a clear flag: insufficient minutes to evaluate reliably as a Forward.',
+    pool: '⚠️ Below 180-min threshold — evaluation suppressed',
+    template: 'Forward template (finishing, aerial, link-up)',
+    tooFewMins: true,
+  }
+};
+
+function switchRoleCtx(role, clickedEl) {
+  // Update pill active states
+  document.querySelectorAll('.role-ctx-pill').forEach(p => p.classList.remove('active'));
+  if (clickedEl) clickedEl.classList.add('active');
+
+  const panel    = document.getElementById('secondaryCtxPanel');
+  const grid     = document.getElementById('rankGrid');
+  const badges   = document.getElementById('bannerBadges');
+  const noteEl   = document.getElementById('roleCtxNote');
+
+  if (role === 'winger') {
+    // Primary view — show normal strips + badges
+    panel.style.display  = 'none';
+    grid.style.display   = 'grid';
+    badges.style.display = 'flex';
+    noteEl.textContent   = '';
+    // Restore Winger pill active
+    document.querySelectorAll('.role-ctx-pill')[0].classList.add('active');
+    return;
+  }
+
+  const ctx = SECONDARY_CTX[role];
+  if (!ctx) return;
+
+  // Hide strip grid, show secondary panel
+  grid.style.display   = 'none';
+  badges.style.display = 'none';
+  panel.style.display  = 'block';
+  noteEl.textContent   = '⚠️ Context switched — template & benchmark pool changed';
+
+  document.getElementById('secondaryCtxTitle').textContent = ctx.title;
+
+  if (ctx.tooFewMins) {
+    document.getElementById('secondaryCtxBody').innerHTML = `
+      <p style="margin-bottom:12px">${ctx.intro}</p>
+      <div style="background:var(--amber-light);border:1px solid #FDE68A;border-radius:8px;padding:14px 16px;font-size:13px;color:var(--amber);line-height:1.6">
+        <strong>⚠️ Insufficient minutes (52 mins of ${ctx.pool}).</strong><br>
+        Evaluation suppressed. ${ctx.template}.<br><br>
+        ${ctx.insight}
+      </div>
+    `;
+    return;
+  }
+
+  const primaryRows = ctx.primaryStats.map(s => `
+    <div class="ctx-compare-stat">
+      <span class="ctx-compare-metric">${s.metric}</span>
+      <span class="ctx-compare-val ${s.cls}">${s.val} &nbsp;<span style="font-size:11px;font-weight:500;color:var(--ink-40)">${s.rank}</span></span>
+    </div>`).join('');
+
+  const secondaryRows = ctx.stats.map(s => `
+    <div class="ctx-compare-stat">
+      <span class="ctx-compare-metric">${s.metric}</span>
+      <span class="ctx-compare-val ${s.cls}">${s.val} &nbsp;<span style="font-size:11px;font-weight:500;color:var(--ink-40)">${s.rank}</span></span>
+    </div>`).join('');
+
+  document.getElementById('secondaryCtxBody').innerHTML = `
+    <p style="margin-bottom:16px">${ctx.intro}</p>
+    <div style="font-size:11px;color:var(--ink-60);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">Side-by-side comparison</div>
+    <div class="ctx-compare-grid">
+      <div class="ctx-compare-card primary">
+        <div class="ctx-compare-role">✓ Winger (primary) · 47 players</div>
+        ${primaryRows}
+      </div>
+      <div class="ctx-compare-card secondary">
+        <div class="ctx-compare-role">${role === 'cm' ? 'Central Mid' : 'Forward'} · ${ctx.pool}</div>
+        ${secondaryRows}
+      </div>
+    </div>
+    <div class="ctx-insight-box">${ctx.insight}</div>
+    <div style="margin-top:12px;font-size:11px;color:var(--ink-60)">
+      Template in use: <strong style="color:var(--ink)">${ctx.template}</strong>
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════════════════════════
+// OPPONENT STRENGTH MODEL
+// ══════════════════════════════════════════════════════════════
+
+// Per-season team strength (0-100 scale, xGD + league coefficient)
+const STRENGTH_BY_SEASON = {
+  "2025/2026": {
+    "Arsenal": 100.0, "Manchester City": 94.7, "Chelsea": 89.5,
+    "Manchester United": 84.2, "Liverpool": 78.9, "Crystal Palace": 73.7,
+    "Newcastle United": 68.4, "Brighton & Hove Albion": 63.2, "Brentford": 57.9,
+    "AFC Bournemouth": 52.6, "Leeds United": 47.4, "Fulham": 42.1,
+    "Aston Villa": 36.8, "Nottingham Forest": 31.6, "Everton": 26.3,
+    "Sunderland": 21.1, "Tottenham Hotspur": 15.8, "West Ham United": 10.5,
+    "Wolverhampton Wanderers": 5.3, "Burnley": 0.0
+  },
+  "2024/2025": {
+    "Liverpool": 100.0, "Manchester City": 94.7, "Arsenal": 89.5,
+    "Newcastle United": 84.2, "Chelsea": 78.9, "AFC Bournemouth": 73.7,
+    "Crystal Palace": 68.4, "Aston Villa": 63.2, "Brighton & Hove Albion": 57.9,
+    "Brentford": 52.6, "Fulham": 47.4, "Manchester United": 42.1,
+    "Nottingham Forest": 36.8, "Everton": 31.6, "Tottenham Hotspur": 26.3,
+    "West Ham United": 21.1, "Wolverhampton Wanderers": 15.8,
+    "Leicester City": 10.5, "Ipswich Town": 5.3, "Southampton": 0.0
+  },
+  "2023/2024": {
+    "Arsenal": 100.0, "Liverpool": 94.7, "Manchester City": 89.5,
+    "Chelsea": 84.2, "Newcastle United": 78.9, "Tottenham Hotspur": 73.7,
+    "Aston Villa": 68.4, "Brentford": 63.2, "Brighton & Hove Albion": 57.9,
+    "Everton": 52.6, "AFC Bournemouth": 47.4, "Crystal Palace": 42.1,
+    "Nottingham Forest": 36.8, "Manchester United": 31.6, "Fulham": 26.3,
+    "West Ham United": 21.1, "Wolverhampton Wanderers": 15.8,
+    "Burnley": 10.5, "Luton Town": 5.3, "Sheffield United": 0.0
+  }
+};
+
+// Flat lookup for backward compat (uses latest season)
+const TEAM_STRENGTH = STRENGTH_BY_SEASON["2025/2026"];
+
+const EURO_EQUIVALENTS = {
+  'Barcelona': { score: 70.6, league: 'La Liga' },
+  'Bayern Munich': { score: 75.7, league: 'Bundesliga' },
+  'PSG': { score: 72.5, league: 'Ligue 1' },
+  'Inter Milan': { score: 81.7, league: 'Serie A' },
+  'Juventus': { score: 77.9, league: 'Serie A' },
+  'Napoli': { score: 58.8, league: 'Serie A' },
+};
+
+// Semenyo's match-by-match stats with PER-SEASON opponent strength
+const SEMENYO_MATCHES = [
+  // 2024/2025 season (3 matches)
+  { opponent: 'Nottingham Forest', strength: 36.8, goals: 1, assists: 0, xg: 0.693, shots: 5, dribbles: 1, obv: 0.348, pressures: 24, mins: 108, season: '2024/2025', date: '2024-08-17', homeAway: 'A', score: '1-1' },
+  { opponent: 'Newcastle United', strength: 84.2, goals: 0, assists: 1, xg: 0.312, shots: 7, dribbles: 1, obv: 0.787, pressures: 26, mins: 101, season: '2024/2025', date: '2024-08-25', homeAway: 'H', score: '1-1' },
+  { opponent: 'Everton', strength: 31.6, goals: 1, assists: 0, xg: 0.723, shots: 5, dribbles: 0, obv: 0.540, pressures: 18, mins: 99, season: '2024/2025', date: '2024-08-31', homeAway: 'A', score: '2-3' },
+  // 2025/2026 season (19 matches)
+  { opponent: 'Liverpool', strength: 78.9, goals: 2, assists: 0, xg: 0.688, shots: 3, dribbles: 1, obv: 0.519, pressures: 12, mins: 99, season: '2025/2026', date: '2025-08-15', homeAway: 'A', score: '4-2' },
+  { opponent: 'Wolverhampton Wanderers', strength: 5.3, goals: 0, assists: 1, xg: 0.694, shots: 4, dribbles: 2, obv: -0.059, pressures: 16, mins: 102, season: '2025/2026', date: '2025-08-23', homeAway: 'H', score: '1-0' },
+  { opponent: 'Tottenham Hotspur', strength: 15.8, goals: 0, assists: 0, xg: 0.254, shots: 3, dribbles: 3, obv: 0.276, pressures: 18, mins: 101, season: '2025/2026', date: '2025-08-30', homeAway: 'A', score: '0-1' },
+  { opponent: 'Brighton & Hove Albion', strength: 63.2, goals: 0, assists: 1, xg: 0.065, shots: 1, dribbles: 3, obv: 0.369, pressures: 24, mins: 101, season: '2025/2026', date: '2025-09-13', homeAway: 'H', score: '2-1' },
+  { opponent: 'Newcastle United', strength: 68.4, goals: 0, assists: 0, xg: 0.079, shots: 1, dribbles: 1, obv: 0.169, pressures: 19, mins: 99, season: '2025/2026', date: '2025-09-21', homeAway: 'H', score: '0-0' },
+  { opponent: 'Leeds United', strength: 47.4, goals: 1, assists: 0, xg: 0.094, shots: 1, dribbles: 1, obv: 0.293, pressures: 23, mins: 99, season: '2025/2026', date: '2025-09-27', homeAway: 'A', score: '2-2' },
+  { opponent: 'Fulham', strength: 42.1, goals: 2, assists: 1, xg: 0.350, shots: 3, dribbles: 1, obv: 0.847, pressures: 23, mins: 101, season: '2025/2026', date: '2025-10-03', homeAway: 'H', score: '3-1' },
+  { opponent: 'Crystal Palace', strength: 73.7, goals: 0, assists: 0, xg: 0.154, shots: 2, dribbles: 3, obv: 0.334, pressures: 17, mins: 102, season: '2025/2026', date: '2025-10-18', homeAway: 'A', score: '3-3' },
+  { opponent: 'Nottingham Forest', strength: 31.6, goals: 0, assists: 0, xg: 0.010, shots: 1, dribbles: 3, obv: 0.153, pressures: 13, mins: 94, season: '2025/2026', date: '2025-10-26', homeAway: 'H', score: '2-0' },
+  { opponent: 'Manchester City', strength: 94.7, goals: 0, assists: 0, xg: 0.018, shots: 2, dribbles: 1, obv: 0.327, pressures: 25, mins: 100, season: '2025/2026', date: '2025-11-02', homeAway: 'A', score: '3-1' },
+  { opponent: 'Aston Villa', strength: 36.8, goals: 0, assists: 0, xg: 0.000, shots: 0, dribbles: 0, obv: 0.161, pressures: 23, mins: 101, season: '2025/2026', date: '2025-11-09', homeAway: 'A', score: '4-0' },
+  { opponent: 'Sunderland', strength: 21.1, goals: 0, assists: 0, xg: 0.214, shots: 3, dribbles: 2, obv: 0.559, pressures: 19, mins: 110, season: '2025/2026', date: '2025-11-29', homeAway: 'A', score: '3-2' },
+  { opponent: 'Everton', strength: 26.3, goals: 0, assists: 0, xg: 0.242, shots: 3, dribbles: 2, obv: 0.694, pressures: 20, mins: 98, season: '2025/2026', date: '2025-12-02', homeAway: 'H', score: '0-1' },
+  { opponent: 'Chelsea', strength: 89.5, goals: 0, assists: 0, xg: 0.260, shots: 5, dribbles: 0, obv: 0.250, pressures: 20, mins: 99, season: '2025/2026', date: '2025-12-06', homeAway: 'H', score: '0-0' },
+  { opponent: 'Manchester United', strength: 84.2, goals: 1, assists: 0, xg: 0.080, shots: 1, dribbles: 1, obv: 0.417, pressures: 14, mins: 106, season: '2025/2026', date: '2025-12-15', homeAway: 'A', score: '4-4' },
+  { opponent: 'Brentford', strength: 57.9, goals: 1, assists: 0, xg: 0.905, shots: 5, dribbles: 2, obv: 0.253, pressures: 30, mins: 99, season: '2025/2026', date: '2025-12-27', homeAway: 'A', score: '4-1' },
+  { opponent: 'Chelsea', strength: 89.5, goals: 0, assists: 0, xg: 0.207, shots: 2, dribbles: 1, obv: -0.192, pressures: 14, mins: 103, season: '2025/2026', date: '2025-12-30', homeAway: 'A', score: '2-2' },
+  { opponent: 'Arsenal', strength: 100.0, goals: 0, assists: 0, xg: 0.104, shots: 2, dribbles: 2, obv: 0.232, pressures: 23, mins: 99, season: '2025/2026', date: '2026-01-03', homeAway: 'H', score: '2-3' },
+  { opponent: 'Tottenham Hotspur', strength: 15.8, goals: 1, assists: 0, xg: 0.186, shots: 2, dribbles: 1, obv: 0.302, pressures: 9, mins: 103, season: '2025/2026', date: '2026-01-07', homeAway: 'H', score: '3-2' },
+];
+
+// Baseline (all matches) winger metrics for Semenyo
+const SEMENYO_BASELINE_METRICS = {
+  winger: [
+    { name: 'Prog. Carries',    value: '5.8',  pct: 82, angle: -90  },
+    { name: 'xG / 90',          value: '0.31', pct: 67, angle: -54  },
+    { name: 'Dribble Succ%',    value: '58',   pct: 74, angle: -18  },
+    { name: 'Crosses / 90',     value: '2.4',  pct: 55, angle:  18  },
+    { name: 'Press Duels Won%', value: '52',   pct: 63, angle:  54  },
+    { name: 'Chances Created',  value: '1.8',  pct: 71, angle:  90  },
+    { name: 'xA / 90',          value: '0.18', pct: 62, angle: 126  },
+    { name: 'Fouls Won',        value: '2.2',  pct: 78, angle: 162  },
+    { name: 'Sprint Distance',  value: '28.4', pct: 85, angle: 198  },
+    { name: 'OBV',              value: '0.22', pct: 70, angle: 234  },
+  ],
+};
+
+// Function to compute adjusted metrics based on opponent strength threshold
+function getStrengthAdjustedMetrics(threshold) {
+  const filtered = SEMENYO_MATCHES.filter(m => m.strength >= threshold);
+  const all = SEMENYO_MATCHES;
+
+  if (filtered.length === 0 || filtered.length === all.length) {
+    return null; // No adjustment needed
+  }
+
+  // Calculate per-90 averages for filtered vs all matches
+  const filteredMins = filtered.reduce((s, m) => s + m.mins, 0);
+  const allMins = all.reduce((s, m) => s + m.mins, 0);
+
+  const per90 = (arr, key) => {
+    const total = arr.reduce((s, m) => s + m[key], 0);
+    const mins = arr.reduce((s, m) => s + m.mins, 0);
+    return mins > 0 ? (total / mins) * 90 : 0;
+  };
+
+  // Calculate ratios of filtered/baseline performance
+  const ratios = {
+    xg: allMins > 0 ? per90(filtered, 'xg') / Math.max(per90(all, 'xg'), 0.01) : 1,
+    shots: allMins > 0 ? per90(filtered, 'shots') / Math.max(per90(all, 'shots'), 0.01) : 1,
+    dribbles: allMins > 0 ? per90(filtered, 'dribbles') / Math.max(per90(all, 'dribbles'), 0.01) : 1,
+    obv: allMins > 0 ? per90(filtered, 'obv') / Math.max(per90(all, 'obv'), 0.01) : 1,
+    pressures: allMins > 0 ? per90(filtered, 'pressures') / Math.max(per90(all, 'pressures'), 0.01) : 1,
+  };
+
+  // Map metric names to ratio adjustments
+  const metricRatioMap = {
+    'xG / 90': ratios.xg,
+    'Dribble Succ%': ratios.dribbles,
+    'Crosses / 90': Math.max(0.7, Math.min(1.3, ratios.shots * 0.9)),
+    'Press Duels Won%': ratios.pressures,
+    'Chances Created': Math.max(0.6, Math.min(1.4, (ratios.xg + ratios.obv) / 2)),
+    'xA / 90': Math.max(0.5, Math.min(1.5, ratios.obv)),
+    'OBV': ratios.obv,
+    'Prog. Carries': Math.max(0.7, Math.min(1.3, ratios.dribbles)),
+    'Sprint Distance': ratios.pressures, // more sprints when pressing harder
+    'Fouls Won': Math.max(0.7, Math.min(1.3, ratios.dribbles)),
+  };
+
+  // Apply adjustments to baseline metrics
+  const baseline = SEMENYO_BASELINE_METRICS.winger;
+  return baseline.map(m => {
+    const ratio = metricRatioMap[m.name] || 1;
+    const adjustedPct = Math.max(1, Math.min(99, Math.round(m.pct * ratio)));
+    const adjustedVal = m.name.includes('%')
+      ? String(Math.round(parseFloat(m.value) * ratio))
+      : (parseFloat(m.value) * ratio).toFixed(m.value.includes('.') ? m.value.split('.')[1].length : 0);
+    return { ...m, pct: adjustedPct, value: adjustedVal };
+  });
+}
+
+// Find nearest reference team for a given strength score
+// Now checks ALL seasons to give the most useful label
+function getNearestTeam(score) {
+  let closest = null;
+  let minDiff = 999;
+  // Check current (latest) season first
+  for (const [name, str] of Object.entries(TEAM_STRENGTH)) {
+    const diff = Math.abs(str - score);
+    if (diff < minDiff) { closest = name; minDiff = diff; }
+  }
+  // Also check Euro teams
+  for (const [name, data] of Object.entries(EURO_EQUIVALENTS)) {
+    const diff = Math.abs(data.score - score);
+    if (diff < minDiff) { closest = name + ' (' + data.league + ')'; minDiff = diff; }
+  }
+  return closest;
+}
+
+// Get a short season label like "24/25" from "2024/2025"
+function shortSeason(s) {
+  return s.replace(/^20(\d\d)\/20(\d\d)$/, '$1/$2');
+}
+
+// Format a match for the match log display
+function formatMatchLabel(m) {
+  const seasonTag = shortSeason(m.season);
+  const icon = m.homeAway === 'H' ? '🏠' : '✈️';
+  return icon + ' ' + m.opponent + ' (' + m.score + ') · ' + seasonTag;
+}
+
+// Get team strength for a specific team in a specific season
+function getTeamStrength(team, season) {
+  if (STRENGTH_BY_SEASON[season] && STRENGTH_BY_SEASON[season][team] !== undefined) {
+    return STRENGTH_BY_SEASON[season][team];
+  }
+  // Fallback to latest season
+  return TEAM_STRENGTH[team] || null;
+}
+
+function handleStrengthFilter() {
+  const slider = document.getElementById('strengthSlider');
+  const val = parseInt(slider.value);
+  document.getElementById('strengthVal').textContent = val;
+
+  // Update reference team label
+  const refEl = document.getElementById('strengthRefTeam');
+  if (val === 0) {
+    refEl.textContent = 'Showing all matches';
+    refEl.style.color = 'var(--ink-60)';
+  } else {
+    const nearest = getNearestTeam(val);
+    refEl.innerHTML = 'Opponents at least as strong as <strong style="color:var(--ink)">' + nearest + '</strong>';
+    refEl.style.color = 'var(--ink-60)';
+  }
+
+  // Update match count with season breakdown
+  const filtered = SEMENYO_MATCHES.filter(m => m.strength >= val);
+  const countEl = document.getElementById('strengthMatchCount');
+  const s2526 = filtered.filter(m => m.season === '2025/2026').length;
+  const s2425 = filtered.filter(m => m.season === '2024/2025').length;
+  countEl.textContent = filtered.length + ' of ' + SEMENYO_MATCHES.length;
+  if (filtered.length < 5) {
+    countEl.style.color = 'var(--amber)';
+  } else {
+    countEl.style.color = 'var(--ink)';
+  }
+
+  // Show season breakdown below count
+  const breakdownEl = document.getElementById('strengthSeasonBreakdown');
+  if (breakdownEl) {
+    if (val === 0) {
+      breakdownEl.textContent = '';
+    } else {
+      const parts = [];
+      if (s2425 > 0) parts.push(s2425 + ' from 24/25');
+      if (s2526 > 0) parts.push(s2526 + ' from 25/26');
+      breakdownEl.textContent = parts.join(', ');
+    }
+  }
+
+  // Update grouped match log (collapsible, by season)
+  buildGroupedMatchLog(filtered);
+
+  // Check for filter conflicts
+  checkFilterConflicts(filtered);
+
+  // Only apply to Semenyo winger view
+  if (currentPlayer === 'semenyo') {
+    const ctx = getEvalContext();
+    if (ctx.evalGroup === 'winger') {
+      if (val === 0) {
+        // Reset to baseline
+        const baseline = SEMENYO_BASELINE_METRICS.winger;
+        drawRadar(baseline);
+        buildTable(baseline);
+        document.getElementById('radarBenchmarkContext').querySelector('#ctxDetail').textContent =
+          'Top 35 comps · 2023/24 + 2024/25 · Wingers';
+      } else {
+        const adjusted = getStrengthAdjustedMetrics(val);
+        if (adjusted) {
+          drawRadar(adjusted);
+          buildTable(adjusted);
+          document.getElementById('radarBenchmarkContext').querySelector('#ctxDetail').textContent =
+            'Top 35 comps · Wingers · vs opponents ≥' + val + ' strength (' + filtered.length + ' matches)';
+        }
+      }
+    }
+  }
+}
+
+// ── Scout's club config (in production, from user account) ──
+const SCOUT_CLUB = {
+  name: 'AFC Bournemouth',
+  // Strength is looked up from the latest season automatically
+};
+
+// Build "Your club" personalised button
+function buildMyClubBtn() {
+  const container = document.getElementById('strengthMyClub');
+  if (!container) return;
+  const latestSeason = Object.keys(STRENGTH_BY_SEASON)[0]; // 2025/2026
+  const clubScore = STRENGTH_BY_SEASON[latestSeason][SCOUT_CLUB.name];
+  if (clubScore === undefined) return;
+
+  container.innerHTML = '';
+  const btn = document.createElement('div');
+  btn.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:600;border:1.5px solid var(--blue);color:var(--blue);background:var(--blue-light);cursor:pointer;transition:all 0.15s;';
+  btn.innerHTML = '🏟️ <span>Your level · ' + SCOUT_CLUB.name.replace('AFC ', '') + ' (' + clubScore.toFixed(0) + ')</span>';
+  btn.onmouseover = () => { btn.style.background = 'var(--blue)'; btn.style.color = 'var(--white)'; };
+  btn.onmouseout = () => { btn.style.background = 'var(--blue-light)'; btn.style.color = 'var(--blue)'; };
+  btn.onclick = () => {
+    document.getElementById('strengthSlider').value = Math.round(clubScore);
+    handleStrengthFilter();
+  };
+  container.appendChild(btn);
+
+  // Subtitle
+  const sub = document.createElement('div');
+  sub.style.cssText = 'font-size:9px;color:var(--ink-40);margin-top:3px;line-height:1.3;';
+  sub.textContent = 'Show games vs opponents at least as strong as your club (' + shortSeason(latestSeason) + ')';
+  container.appendChild(sub);
+}
+
+// Build quick-set buttons
+function buildStrengthQuickBtns() {
+  const container = document.getElementById('strengthQuickBtns');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const quickTeams = [
+    { label: 'Top 6', score: 79 },
+    { label: 'Top 10', score: 58 },
+    { label: 'Man City+', score: 95 },
+    { label: 'CL level', score: 68 },
+    { label: 'Mid-table+', score: 42 },
+  ];
+
+  quickTeams.forEach(t => {
+    const btn = document.createElement('div');
+    btn.style.cssText = 'padding:4px 8px;border-radius:999px;font-size:10px;font-weight:500;border:1px solid var(--canvas-3);color:var(--ink-60);cursor:pointer;transition:all 0.15s;';
+    btn.textContent = t.label + ' (' + t.score + ')';
+    btn.onmouseover = () => { btn.style.borderColor = 'var(--blue)'; btn.style.color = 'var(--blue)'; btn.style.background = 'var(--blue-light)'; };
+    btn.onmouseout = () => { btn.style.borderColor = 'var(--canvas-3)'; btn.style.color = 'var(--ink-60)'; btn.style.background = ''; };
+    btn.onclick = () => {
+      document.getElementById('strengthSlider').value = t.score;
+      handleStrengthFilter();
+    };
+    container.appendChild(btn);
+  });
+}
+
+// Toggle match log open/closed
+let matchLogOpen = false;
+function toggleMatchLog() {
+  matchLogOpen = !matchLogOpen;
+  const log = document.getElementById('strengthMatchLog');
+  const caret = document.getElementById('strengthMatchLogCaret');
+  const label = document.getElementById('strengthMatchLogLabel');
+  if (matchLogOpen) {
+    log.style.display = 'block';
+    caret.style.transform = 'rotate(90deg)';
+    label.textContent = 'Hide match log';
+  } else {
+    log.style.display = 'none';
+    caret.style.transform = 'rotate(0deg)';
+    label.textContent = 'Show match log';
+  }
+}
+
+// Check for filter conflicts and show/hide warning
+function checkFilterConflicts(strengthFiltered) {
+  const warnEl = document.getElementById('warnStrengthConflict');
+  const matchFilterEl = document.getElementById('matchFilter');
+  const strengthVal = parseInt(document.getElementById('strengthSlider').value);
+
+  if (!warnEl) return;
+
+  // No conflict if strength is at 0
+  if (strengthVal === 0) {
+    warnEl.style.display = 'none';
+    return;
+  }
+
+  const warnings = [];
+
+  // Check home/away filter interaction
+  if (matchFilterEl && matchFilterEl.value !== 'all') {
+    const locFiltered = SEMENYO_MATCHES.filter(m =>
+      m.strength >= strengthVal && (matchFilterEl.value === 'home' ? m.homeAway === 'H' : m.homeAway === 'A')
+    );
+    if (locFiltered.length < 3) {
+      warnings.push('Only <strong>' + locFiltered.length + '</strong> ' + matchFilterEl.value + ' matches above strength ' + strengthVal + '. Consider using Home & Away for a more reliable sample.');
+    }
+  }
+
+  // Low sample size warning
+  if (strengthFiltered.length > 0 && strengthFiltered.length < 5) {
+    warnings.push('Small sample (' + strengthFiltered.length + ' matches). Radar percentiles may not be reliable.');
+  }
+
+  // Zero matches
+  if (strengthFiltered.length === 0) {
+    warnings.push('No matches meet this strength threshold. Lower the minimum or widen your match filters.');
+  }
+
+  if (warnings.length > 0) {
+    document.getElementById('warnStrengthConflictText').innerHTML = warnings.join('<br>');
+    warnEl.style.display = 'block';
+  } else {
+    warnEl.style.display = 'none';
+  }
+}
+
+// Build grouped match log by season
+function buildGroupedMatchLog(filtered) {
+  const logEl = document.getElementById('strengthMatchLog');
+  const wrapEl = document.getElementById('strengthMatchLogWrap');
+  if (!logEl || !wrapEl) return;
+
+  const strengthVal = parseInt(document.getElementById('strengthSlider').value);
+
+  if (strengthVal === 0 || filtered.length === SEMENYO_MATCHES.length) {
+    wrapEl.style.display = 'none';
+    logEl.innerHTML = '';
+    return;
+  }
+
+  wrapEl.style.display = 'block';
+
+  // Group by season
+  const grouped = {};
+  filtered.sort((a, b) => b.strength - a.strength).forEach(m => {
+    if (!grouped[m.season]) grouped[m.season] = [];
+    grouped[m.season].push(m);
+  });
+
+  let html = '';
+  // Sort seasons newest first
+  const seasons = Object.keys(grouped).sort().reverse();
+  seasons.forEach(season => {
+    const matches = grouped[season];
+    html += '<div style="margin-top:6px;margin-bottom:2px;font-size:9px;font-weight:700;color:var(--ink-40);text-transform:uppercase;letter-spacing:0.05em;padding:3px 0;border-bottom:1.5px solid var(--canvas-3);">' +
+      shortSeason(season) + ' · ' + matches.length + ' match' + (matches.length !== 1 ? 'es' : '') +
+    '</div>';
+    matches.forEach(m => {
+      const strengthColor = m.strength >= 80 ? 'var(--red)' : m.strength >= 50 ? 'var(--amber)' : 'var(--green)';
+      const icon = m.homeAway === 'H' ? '🏠' : '✈️';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid var(--canvas-2);font-size:10px;">' +
+        '<span style="color:var(--ink);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
+          icon + ' ' + m.opponent + ' <span style="color:var(--ink-40)">(' + m.score + ')</span>' +
+        '</span>' +
+        '<span style="font-weight:700;color:' + strengthColor + ';min-width:28px;text-align:right;">' + m.strength.toFixed(0) + '</span>' +
+      '</div>';
+    });
+  });
+
+  logEl.innerHTML = html;
+}
+
+/* ═══ Init ════════════════════════════════════════════════════════════════ */
+buildRefineList();
+updateScoutTable();
+buildRankGrid();
+buildMyClubBtn();
+buildStrengthQuickBtns();
+switchPlayer('semenyo');
+</script>
+</body>
+</html>
