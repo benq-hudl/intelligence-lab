@@ -639,15 +639,15 @@ input[type=range] {
 <!-- Prototype page switcher -->
 <div class="page-label">PROTOTYPE v1</div>
 <div class="page-switcher">
-  <div class="page-btn active" onclick="switchPage('scout')">🔍 Player Scout</div>
+  <div class="page-btn" onclick="switchPage('scout')">🔍 Player Scout</div>
   <div class="page-btn" onclick="switchPage('rankings')">📊 Rankings</div>
-  <div class="page-btn" onclick="switchPage('radar')">🎯 Radar</div>
+  <div class="page-btn active" onclick="switchPage('radar')">🎯 Radar</div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════
      PAGE 1 — PLAYER SCOUT
 ════════════════════════════════════════════════════════════════ -->
-<div class="page active" id="page-scout">
+<div class="page" id="page-scout">
 
   <!-- Topbar -->
   <div class="topbar">
@@ -2343,7 +2343,7 @@ input[type=range] {
 }
 </style>
 
-<div class="page" id="page-radar">
+<div class="page active" id="page-radar">
   <div class="r3wrap">
 <!-- ═══════════════════════════════════
   LEFT ICON NAV
@@ -2395,8 +2395,8 @@ input[type=range] {
       <span class="player-name-chevron">▾</span>
       <div class="topbar-divider"></div>
       <span class="scenario-label">Scenario</span>
-      <div class="scenario-tab active" id="sw-vandijk" onclick="switchPlayer('vandijk')">Virgil van Dijk · CB · Liverpool</div>
-      <div class="scenario-tab" id="sw-semenyo" onclick="switchPlayer('semenyo')">
+      <div class="scenario-tab" id="sw-vandijk" onclick="switchPlayer('vandijk')">Virgil van Dijk · CB · Liverpool</div>
+      <div class="scenario-tab active" id="sw-semenyo" onclick="switchPlayer('semenyo')">
         Antoine Semenyo · Bournemouth <span class="multi-badge">MULTI-POSITION</span>
       </div>
       <div class="topbar-divider"></div>
@@ -3639,7 +3639,7 @@ function hideEvalTooltip() { document.getElementById('evalTooltip').classList.re
 // INIT
 // ══════════════════════════════════════════════════════════════
 
-switchPlayer('vandijk');
+switchPlayer('semenyo');
 updateSampleSize();
 </script>
 
